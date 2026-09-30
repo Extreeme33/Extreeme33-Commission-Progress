@@ -340,6 +340,12 @@
         }
 
         function generateCardBackgroundStyle(item) {
+            if (item.cardBgImg) {
+                const zoom = item.bgZoom || 100;
+                const posX = item.bgX || 50;
+                const posY = item.bgY || 50;
+                return `background-image: linear-gradient(rgba(22, 25, 37, 0.4), rgba(22, 25, 37, 0.4)), url('${item.cardBgImg}'); background-size: ${zoom}%; background-position: ${posX}% ${posY}%; background-repeat: no-repeat;`;
+            }
             return `background-color: ${item.cardBgColor || '#161925'};`;
         }
         
