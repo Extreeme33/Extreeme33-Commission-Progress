@@ -39,7 +39,6 @@
             max-width: 1200px;
         }
 
-        /* Top Navbar Elements */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -63,7 +62,6 @@
             width: 250px;
         }
 
-        /* Filter Categories System */
         .nav-filters {
             display: flex;
             gap: 30px;
@@ -89,7 +87,6 @@
 
         .grid-container {
             display: grid;
-            /* KUNCI UTAMA: Mengunci grid agar SELALU terbagi menjadi 3 kolom secara horizontal, kebal dari resize! */
             grid-template-columns: repeat(3, 1fr); 
             gap: 25px 20px; 
             margin-top: 40px;
@@ -100,8 +97,8 @@
         
         .card-wrapper {
             position: relative;
-            width: 100%; /* 🔲 KUNCI responsif: Diubah dari 350px menjadi 100% agar lebar otomatis menyusut lentur */
-            max-width: 380px; /* Batas lebar maksimal agar kartu tidak terlalu melar saat layar sangat besar */
+            width: 100%; 
+            max-width: 380px; 
             height: 110px; 
             overflow: visible; 
             flex-shrink: 0;
@@ -115,7 +112,7 @@
             padding: 15px;
             display: flex;
             align-items: center;
-            gap: 12px; /* 🔲 DIRAPATKAN: Dari 15px ke 12px agar tidak memakan banyak ruang saat menyusut */
+            gap: 12px;
             border: 1px solid #232738;
             position: relative;
             width: 100%;
@@ -138,7 +135,6 @@
             background-repeat: no-repeat;
             flex-shrink: 0;
             z-index: 3;
-            /* KUNCI UTAMA: Pastikan tidak ada background-color solid agar PNG transparan bekerja sempurna! */
             background-color: transparent !important; 
         }
 
@@ -164,8 +160,8 @@
         .select-row {
             display: flex;
             flex-direction: column;
-            gap: 2px; /* 🔲 DIRAPATKAN: Dari 8px menjadi 2px agar teks "Progress" menempel dekat ke bilah bar */
-            margin-top: 2px; /* 🔲 DIRAPATKAN: Mengurangi jarak kosong dari teks nama item di atasnya */
+            gap: 2px; 
+            margin-top: 2px;
             width: 100%;
         }
 
@@ -174,7 +170,7 @@
             align-items: center;
             gap: 8px;
             width: 100%;
-            margin-top: -2px; /* 🔲 OPTIMASI: Tarik sedikit ke atas agar posisi bar sejajar rapat dengan teks */
+            margin-top: -2px; 
         }
 
         .progress-track-wrapper {
@@ -233,15 +229,14 @@
             border-color: var(--accent-green);
         }
 		
-        /* Setelan Kotak Status Melayang di Sisi Website Online Klien */
         .status-badge-rect {
             position: absolute;
-            top: -10px; /* Melayang lurus ke atas keluar dari badan kartu komisi */
+            top: -10px;
             left: 10px;
             width: fit-content;
             height: 20px;
             border-radius: 4px;
-            z-index: 9999; /* Berdiri kokoh di atas permukaan atmosfer kartu */
+            z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
