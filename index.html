@@ -377,7 +377,8 @@
         function getSubStatusColor(statusValue) {
             switch (statusValue) {
                 case "none": return "transparent";
-                case "wip": return "#10b981";
+                case "finished": return "#10b981";      
+                case "wip": return "#eab308";    
                 case "queue": return "#f97316";
                 case "delayed": return "#ef4444";
                 case "postponed": return "#6b7280";
@@ -388,6 +389,7 @@
         function getSubStatusText(statusValue) {
             switch (statusValue) {
                 case "none": return "";
+                case "finished": return "Finished";
                 case "wip": return "Work In Progress";
                 case "queue": return "In The Queue";
                 case "delayed": return "Delayed";
