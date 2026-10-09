@@ -328,7 +328,7 @@
         </div>
     </div>
 	
-	<script src="storage.js"></script>
+	<script src="storage.js" defer></script>
     <script>
 	
         try {
@@ -552,18 +552,15 @@
                 }
             });
 
-            // Bagian perulangan di dalam fungsi renderDashboard() yang baru
-            // Jalankan perulangan gambar kartu dari filteredItems yang sudah terurut rapi
             filteredItems.forEach(item => {
                 visibleCardsCount++;
 
-                // 1. Ambil data warna badge status bawaan Anda
                 const subStatusColor = getSubStatusColor(item.subStatus || "none");
                 const subStatusText = getSubStatusText(item.subStatus || "none");
                 const rectDisplayStatus = (item.subStatus === "none" || !item.subStatus) ? "none" : "flex";
 				
                 const subStatus2Color = getSubStatus2Color(item.subStatus2 || "none");
-                // 🟩 DIPERBAIKI: Mengubah getSubStatusText menjadi getSubStatus2Text agar teks komisi kembali muncul
+
                 const subStatus2Text = getSubStatus2Text(item.subStatus2 || "none"); 
                 const rect2DisplayStatus = (item.subStatus2 === "none" || !item.subStatus2) ? "none" : "flex";
 				
@@ -571,22 +568,16 @@
                 const subStatus3Text = getSubStatus3Text(item.repeatOrder || 0);
                 const rect3DisplayStatus = (!item.repeatOrder || parseInt(item.repeatOrder) <= 0) ? "none" : "flex";
 
-                // 🟩 PERBAIKAN MUTLAK: Sistem Deteksi Hibrida (Aman untuk Offline & Super Cepat untuk Online)
-                const mediaAsset = (typeof storageDatabase !== 'undefined') ? storageDatabase.find(s => s.id === item.id) : null;
-                
-                // Jika file storage.js eksternal aktif (Online), ambil dari sana. Jika tidak (Offline), otomatis pakai data objek item asli Anda.
-                const finalImgData = mediaAsset ? mediaAsset.img : (item.img || '');
-                const finalBgImgData = mediaAsset ? mediaAsset.cardBgImg : (item.cardBgImg || '');
-                const finalZoom = mediaAsset ? mediaAsset.bgZoom : (item.bgZoom || 100);
-                const finalX = mediaAsset ? mediaAsset.bgX : (item.bgX || 50);
-                const finalY = mediaAsset ? mediaAsset.bgY : (item.bgY || 50);
-
-                // 🟩 KUNCI UTAMA: Memasukkan kembali variabel hibrida ke dalam rumus pembentuk style asli Anda agar gambar lokal tidak pecah
-                const itemImgStr = item.imgStatic && finalImgData ? item.imgStatic : finalImgData;
-                
+                // 🟩 DIUBAH: Setel gambar awal menggunakan placeholder transparan atau warna dasar bawaan (Instan 0 Milidetik)
+                let itemImgStr = '';
                 let inlineCardStyle = `background-color: ${item.cardBgColor || '#161925'};`;
-                if (finalBgImgData) {
-                    inlineCardStyle += ` background-image: url('${finalBgImgData}'); background-size: ${finalZoom}%; background-position: ${finalX}% ${finalY}%; background-repeat: no-repeat;`;
+
+                // Jika berjalan secara offline (storageDatabase tidak ada), langsung pakai data gambar lokal bawaan
+                if (typeof storageDatabase === 'undefined') {
+                    itemImgStr = item.imgStatic && item.img ? item.imgStatic : (item.img || '');
+                    if (item.cardBgImg) {
+                        inlineCardStyle += ` background-image: url('${item.cardBgImg}'); background-size: ${item.bgZoom || 100}%; background-position: ${item.bgX || 50}% ${item.bgY || 50}%; background-repeat: no-repeat;`;
+                    }
                 }
 
                 const shadowRule = getOutlineShadow(item.useStroke, item.strokeColor);
@@ -640,15 +631,49 @@
                 `;
 
                 setTimeout(() => {
+                    const cardElement = document.getElementById(`demo-card-${item.id}`);
                     const previewIcon = document.getElementById(`demo-img-${item.id}`);
-                    if (previewIcon && item.img) {
+                    
+                    // 🟩 DEFER LOADING ENGINE: Menyuntikkan aset base64 dari storage.js secara paralel di latar belakang
+                    if (typeof storageDatabase !== 'undefined') {
+                        const mediaAsset = storageDatabase.find(s => s.id === item.id);
+                        if (mediaAsset) {
+                            const runtimeImg = item.imgStatic && mediaAsset.img ? item.imgStatic : mediaAsset.img;
+                            
+                            if (previewIcon && runtimeImg) {
+                                previewIcon.style.backgroundImage = `url('${runtimeImg}')`;
+                            }
+                            if (cardElement && mediaAsset.cardBgImg) {
+                                cardElement.style.backgroundImage = `url('${mediaAsset.cardBgImg}')`;
+                                cardElement.style.backgroundSize = `${mediaAsset.bgZoom || 100}%`;
+                                cardElement.style.backgroundPosition = `${mediaAsset.bgX || 50}% ${mediaAsset.bgY || 50}%`;
+                                cardElement.style.backgroundRepeat = 'no-repeat';
+                            }
+                        }
+                    }
+
+                    // 🟩 INTERACTION LISTENERS: Memasang efek hover dengan pengecekan ketersediaan data hibrida yang aman
+                    if (previewIcon) {
                         previewIcon.addEventListener('mouseenter', (e) => {
                             e.stopPropagation();
-                            previewIcon.style.backgroundImage = `url('${item.img}')`;
+                            if (typeof storageDatabase !== 'undefined') {
+                                const mediaAsset = storageDatabase.find(s => s.id === item.id);
+                                if (mediaAsset && mediaAsset.img) previewIcon.style.backgroundImage = `url('${mediaAsset.img}')`;
+                            } else {
+                                if (item.img) previewIcon.style.backgroundImage = `url('${item.img}')`;
+                            }
                         });
+                        
                         previewIcon.addEventListener('mouseleave', (e) => {
                             e.stopPropagation();
-                            previewIcon.style.backgroundImage = `url('${itemImgStr}')`;
+                            if (typeof storageDatabase !== 'undefined') {
+                                const mediaAsset = storageDatabase.find(s => s.id === item.id);
+                                const runtimeImg = item.imgStatic && mediaAsset ? item.imgStatic : (mediaAsset ? mediaAsset.img : '');
+                                previewIcon.style.backgroundImage = `url('${runtimeImg}')`;
+                            } else {
+                                const runtimeImg = item.imgStatic && item.img ? item.imgStatic : (item.img || '');
+                                previewIcon.style.backgroundImage = `url('${runtimeImg}')`;
+                            }
                         });
                     }
                 }, 0);
