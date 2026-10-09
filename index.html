@@ -283,21 +283,38 @@
     </style>
 	<script src="neutralino.js"></script>
 </head>
-<body>
+<body style="margin: 0; padding: 0;">
+    
+    <div id="dashboard" style="padding-top: 0px; margin-top: 12px; position: relative;">
 
-    <div id="dashboard">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0px; padding-top: 0px; padding-bottom: 15px;">
 
-        <div class="top-bar">
-            <div class="brand-title">Progress List</div>
-            <input type="text" id="dashboard-search-box" class="search-box" placeholder="Search by Name">
+            <div class="brand-title" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">Extreeme33 Dashboard</div>
             
         </div>
 
-        <ul class="nav-filters">
-            <li class="nav-item active">Progress</li>
-            <li class="nav-item">Finished</li>
-            <li class="nav-item">Update</li>
-        </ul>
+        <div style="width: 100%; border-top: 1px solid #2d3142; margin-bottom: 15px;"></div>
+
+        <div style="display: flex; justify-content: center; width: 100%; padding-bottom: 15px;">
+            <ul class="nav-filters" style="margin-bottom: 0; padding-bottom: 0; border: none; display: flex; gap: 30px; list-style: none; margin: 0; padding: 0;">
+                <li class="nav-item active" style="cursor: pointer;">Progress</li>
+                <li class="nav-item" style="cursor: pointer;">Finished</li>
+                <li class="nav-item" style="cursor: pointer;">Update</li>
+            </ul>
+        </div>
+
+        <div style="width: 100%; border-top: 1px solid #2d3142; margin-bottom: 20px;"></div>
+
+        <div id="search-bar-row-wrapper" style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 25px; width: 100%;">
+            <input type="text" id="dashboard-search-box" class="search-box" placeholder="Search by Name" style="width: 300px; background: var(--bg-input); border: 1px solid #2d3142; padding: 8px 16px; border-radius: 6px; color: white; margin: 0;">
+            
+            <select id="dashboard-sort-select" style="background: var(--bg-input); border: 1px solid #2d3142; padding: 8px 12px; border-radius: 6px; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; height: 38px; text-align: center;">
+                <option value="date-desc">Sort: Newest</option>
+                <option value="date-asc">Sort: Oldest</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+            </select>
+        </div>
 
         <div class="grid-container" id="work-grid"></div>
 
@@ -477,7 +494,7 @@
             if (!isoString) return "";
             try {
                 const date = new Date(isoString);
-                // Jika data lama masih berupa teks biasa ("04/10/2026..."), langsung kembalikan teksnya
+
                 if (isNaN(date.getTime())) return isoString; 
 
                 const pad = (num) => String(num).padStart(2, '0');
@@ -505,18 +522,36 @@
 
             const searchInput = document.getElementById('dashboard-search-box');
             const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : "";
+            
+            const sortSelect = document.getElementById('dashboard-sort-select');
+            const sortValue = sortSelect ? sortSelect.value : "date-desc";
 
             let visibleCardsCount = 0;
 
-            itemDatabase.forEach(item => {
+            let filteredItems = itemDatabase.filter(item => {
                 const itemStatus = item.status || "progress";
-                if (itemStatus !== activeDashboardTab) return;
+                if (itemStatus !== activeDashboardTab) return false;
                 
                 const itemTitle = item.title || "";
                 if (searchQuery !== "" && !itemTitle.toLowerCase().includes(searchQuery)) {
-                    return; 
+                    return false;
                 }
-                
+                return true;
+            });
+
+            filteredItems.sort((a, b) => {
+                if (sortValue.startsWith("name")) {
+                    const titleA = (a.title || "").toLowerCase();
+                    const titleB = (b.title || "").toLowerCase();
+                    return sortValue === "name-asc" ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+                } else {
+                    const timeA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+                    const timeB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+                    return sortValue === "date-desc" ? timeB - timeA : timeA - timeB;
+                }
+            });
+
+            filteredItems.forEach(item => {
                 visibleCardsCount++;
 
                 const subStatusColor = getSubStatusColor(item.subStatus || "none");
@@ -610,6 +645,8 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.nav-filters .nav-item');
+            const searchRow = document.getElementById('search-bar-row-wrapper'); 
+
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
                     tabs.forEach(t => t.classList.remove('active'));
@@ -618,10 +655,31 @@
                     const selectedText = this.textContent.trim().toLowerCase();
                     if (selectedText === "progress" || selectedText === "finished" || selectedText === "update") {
                         activeDashboardTab = selectedText;
+                        
+                        if (selectedText === "update") {
+                            if (searchRow) searchRow.style.display = "none";
+                        } else {
+                            if (searchRow) searchRow.style.display = "flex";
+                        }
+                        
                         renderDashboard();
                     }
                 });
             });
+
+            const searchInputBox = document.getElementById('dashboard-search-box');
+            if (searchInputBox) {
+                searchInputBox.addEventListener('input', () => {
+                    renderDashboard();
+                });
+            }
+
+            const sortSelectBox = document.getElementById('dashboard-sort-select');
+            if (sortSelectBox) {
+                sortSelectBox.addEventListener('change', () => {
+                    renderDashboard();
+                });
+            }
 
             const adminBtn = document.getElementById('admin-panel-btn');
             if (adminBtn) {
@@ -637,13 +695,6 @@
                 Neutralino.events.on('syncDashboardData', () => {
                     console.log("Real-time data synchronization signal received from Admin Panel.");
                     syncDashboardPayload();
-                });
-            }
-
-            const searchInputBox = document.getElementById('dashboard-search-box');
-            if (searchInputBox) {
-                searchInputBox.addEventListener('input', () => {
-                    renderDashboard();
                 });
             }
         }); 
