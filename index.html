@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progress List - Demo View</title>
+    <title>Extreeme33 Dashboard</title>
     <style>
         :root {
             --bg-dark: #0f111a;
@@ -390,7 +390,7 @@
             renderDashboard(); 
         }
 		
-        let itemDatabase = JSON.parse("[{\"id\":1791558213769,\"title\":\"Test 1\",\"progress\":50,\"color\":\"#10b981\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"progress\",\"subStatus\":\"none\",\"subStatus2\":\"none\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-09T15:06:53.520Z\"},{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":55,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":8,\"workStage\":\"coloring\",\"lastUpdated\":\"2026-10-09T02:51:59.067Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"},{\"id\":1790830569465,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":12,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-09T11:28:01.244Z\"}]");
+        let itemDatabase = JSON.parse("[{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":55,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":8,\"workStage\":\"coloring\",\"lastUpdated\":\"2026-10-09T02:51:59.067Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"},{\"id\":1790830569465,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":12,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-09T11:28:01.244Z\"}]");
 		
         let activeDashboardTab = "progress";
 
@@ -568,15 +568,13 @@
                 const subStatus3Text = getSubStatus3Text(item.repeatOrder || 0);
                 const rect3DisplayStatus = (!item.repeatOrder || parseInt(item.repeatOrder) <= 0) ? "none" : "flex";
 
-                // 🟩 DIUBAH: Setel gambar awal menggunakan placeholder transparan atau warna dasar bawaan (Instan 0 Milidetik)
                 let itemImgStr = '';
                 let inlineCardStyle = `background-color: ${item.cardBgColor || '#161925'};`;
 
-                // Jika berjalan secara offline (storageDatabase tidak ada), langsung pakai data gambar lokal bawaan
                 if (typeof storageDatabase === 'undefined') {
                     itemImgStr = item.imgStatic && item.img ? item.imgStatic : (item.img || '');
                     if (item.cardBgImg) {
-                        inlineCardStyle += ` background-image: url('${item.cardBgImg}'); background-size: ${item.bgZoom || 100}%; background-position: ${item.bgX || 50}% ${item.bgY || 50}%; background-repeat: no-repeat;`;
+                        inlineCardStyle += ` background-image: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('${item.cardBgImg}'); background-size: ${item.bgZoom || 100}%; background-position: ${item.bgX || 50}% ${item.bgY || 50}%; background-repeat: no-repeat;`;
                     }
                 }
 
@@ -634,7 +632,6 @@
                     const cardElement = document.getElementById(`demo-card-${item.id}`);
                     const previewIcon = document.getElementById(`demo-img-${item.id}`);
                     
-                    // 🟩 DEFER LOADING ENGINE: Menyuntikkan aset base64 dari storage.js secara paralel di latar belakang
                     if (typeof storageDatabase !== 'undefined') {
                         const mediaAsset = storageDatabase.find(s => s.id === item.id);
                         if (mediaAsset) {
@@ -643,8 +640,9 @@
                             if (previewIcon && runtimeImg) {
                                 previewIcon.style.backgroundImage = `url('${runtimeImg}')`;
                             }
+
                             if (cardElement && mediaAsset.cardBgImg) {
-                                cardElement.style.backgroundImage = `url('${mediaAsset.cardBgImg}')`;
+                                cardElement.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('${mediaAsset.cardBgImg}')`;
                                 cardElement.style.backgroundSize = `${mediaAsset.bgZoom || 100}%`;
                                 cardElement.style.backgroundPosition = `${mediaAsset.bgX || 50}% ${mediaAsset.bgY || 50}%`;
                                 cardElement.style.backgroundRepeat = 'no-repeat';
@@ -652,7 +650,6 @@
                         }
                     }
 
-                    // 🟩 INTERACTION LISTENERS: Memasang efek hover dengan pengecekan ketersediaan data hibrida yang aman
                     if (previewIcon) {
                         previewIcon.addEventListener('mouseenter', (e) => {
                             e.stopPropagation();
