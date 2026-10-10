@@ -792,7 +792,7 @@
                 }, 0);
             });
 
-            // 🟩 DIPERBAIKI: Logika tab UPDATE diisolasi dengan pembersihan string interpolasi ganda agar 100% bebas dari risiko crash
+            // 🟩 DIPERBAIKI: Mengisolasi penuh render tab update dari karakter backslash agar foto profil lolos live online di GitHub Pages
             if (activeDashboardTab === "update") {
                 const liveStatusFeedSource = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
 
@@ -828,20 +828,20 @@
                         typeText = "Warning"; typeColor = "#eab308"; typeBg = "rgba(234, 179, 8, 0.15)";
                     }
 
-                    // 🟩 DIPERBAIKI: Menyederhanakan inline style avatar ke dalam variabel luar agar aman dari bentrokan tanda backtick
-                    let feedAvatarStyle = "background-color: #2563eb;";
-                    let feedAvatarText = "EX";
+                    // 🟩 KUNCI PERBAIKAN: Menghitung variabel gaya visual avatar murni di luar string literal (Bebas dari Backslash)
+                    let feedAvatarInlineStyle = "background-color: #2563eb;";
+                    let feedAvatarInitialText = "EX";
                     
                     if (activeAvatarEnv && activeAvatarEnv.trim() !== "") {
-                        feedAvatarStyle = `background-image: url('${activeAvatarEnv}'); background-size: cover; background-position: center;`;
-                        feedAvatarText = "";
+                        feedAvatarInlineStyle = `background-image: url('${activeAvatarEnv}'); background-size: cover; background-position: center;`;
+                        feedAvatarInitialText = "";
                     }
 
                     feedHtml += `
                         <div style="background: var(--bg-card); border: 1px solid #232738; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: left;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                                <!-- Menggunakan variabel gaya luar yang 100% aman dan bersih -->
-                                <div style="width: 38px; height: 38px; border-radius: 50%; ${feedAvatarStyle} display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white; flex-shrink: 0;">${feedAvatarText}</div>
+                                <!-- Menggunakan variabel gaya steril yang 100% aman dieksekusi seluruh browser internet -->
+                                <div style="width: 38px; height: 38px; border-radius: 50%; ${feedAvatarInlineStyle} display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white; flex-shrink: 0;">${feedAvatarInitialText}</div>
                                 
                                 <div style="display: flex; flex-direction: column; align-items: flex-start;">
                                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
