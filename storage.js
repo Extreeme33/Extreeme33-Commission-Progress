@@ -44,3 +44,5 @@ let adminStatusFeed = [
         "type": "announcement"
     }
 ];
+
+if(typeof triggerCloudStorageCallback === 'function') { triggerCloudStorageCallback(); }

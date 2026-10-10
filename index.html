@@ -328,7 +328,7 @@
         </div>
     </div>
 	
-	<script src="storage.js" defer></script>
+	<script src="storage.js" async></script>
     <script>
 	
         try {
@@ -819,15 +819,38 @@
                 });
             }
 
-            syncDashboardPayload(); 
+            // 🟩 DIUBAH: Sistem Pemicu Otomatis Hibrida (Aman untuk Offline Lokal & Cloud GitHub Pages)
+            function initializeDashboardCore() {
+                console.log("Execution signal received. Synchronizing payload parameters...");
+                syncDashboardPayload();
+            }
+
+            // Jalur A (Offline Lokal): Jika Neutralino aktif, langsung jalankan pancingan awal
+            if (typeof Neutralino !== 'undefined') {
+                initializeDashboardCore();
+            } else {
+                // Jalur B (Online Cloud): Menunggu hingga asset storage.js selesai terunduh sempurna di memori browser
+                if (document.readyState === 'complete') {
+                    initializeDashboardCore();
+                } else {
+                    window.addEventListener('load', initializeDashboardCore);
+                }
+            }
 
             if (typeof Neutralino !== 'undefined' && Neutralino.events) {
                 Neutralino.events.on('syncDashboardData', () => {
-                    console.log("Real-time data synchronization signal received from Admin Panel.");
-                    syncDashboardPayload();
+                    initializeDashboardCore();
                 });
             }
-        }); 
+        });
+
+        // 🟩 FUNGSI GLOBAL BARU: Sebagai jembatan ketukan balik jika storage.js selesai terunduh lebih cepat
+        function triggerCloudStorageCallback() {
+            if (typeof activeDashboardTab !== 'undefined') {
+                console.log("Storage asset callback pulse received. Refreshing layout engines...");
+                syncDashboardPayload();
+            }
+        }
 
         (function() {
             const panel = document.createElement('div');
