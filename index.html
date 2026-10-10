@@ -295,7 +295,6 @@
             transform: translateX(-50%) scale(0);
             border-width: 6px 6px 0 6px;
             border-style: solid;
-            /* Membalik arah jarum segitiga menunjuk ke bawah */
             border-color: #ffffff transparent transparent transparent; 
             transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 100000;
@@ -316,7 +315,6 @@
             padding: 5px 10px;
             border-radius: 6px;
             white-space: nowrap;
-            /* Bayangan bergeser halus ke bawah untuk memperkuat efek melayang */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); 
             transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             font-family: inherit;
@@ -325,7 +323,6 @@
             pointer-events: none;
         }
 
-        /* Efek Pemicu: Balon Otomatis Membesar Meluncur Saat Mouse Mengarah (Hover) */
         .brand-avatar-container:hover::before,
         .brand-avatar-container:hover::after {
             transform: translateX(-50%) scale(1);
@@ -339,15 +336,14 @@
     <div id="dashboard" style="padding-top: 0px; margin-top: 12px; position: relative;">
 
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0px; padding-top: 0px; padding-bottom: 15px;">
-            <!-- 🟩 DIUBAH: Menyandingkan lingkaran avatar mini di sebelah kiri teks judul dasbor secara horizontal -->
+
             <div style="display: flex; align-items: center; gap: 10px;">
-            <!-- 🟩 DIUBAH: Menyisipkan kontainer pembungkus balon petunjuk kustom dengan jumlah spasi horizontal yang sama rata sejajar -->
+
             <div class="brand-avatar-container">
-                <!-- 🟩 DIUBAH: Ukuran dimaksimalkan ke 50px dan border-radius ditingkatkan ke 10px agar proporsi kelengkungan sudutnya tetap proporsional -->
+
                 <div id="index-brand-avatar-view" style="width: 50px; height: 50px; border-radius: 10px; background: #2563eb; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; color: white; border: 1px solid #2d3142; flex-shrink: 0;">EX</div>
             </div>
 
-                <!-- Judul teks utama dasbor portofolio Anda -->
                 <div class="brand-title" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">Extreeme33 Dashboard</div>
             </div>
             
@@ -609,7 +605,6 @@
 			
             const brandAvatar = document.getElementById('index-brand-avatar-view');
             
-            // 🟩 DIUBAH: Mengunci prioritas utama mutlak pada window.globalAvatar agar tidak tertimpa oleh variabel lokal kosong saat online di GitHub Pages
             const activeAvatarEnv = (window.globalAvatar && window.globalAvatar.trim() !== "") ? window.globalAvatar : (typeof globalAvatar !== 'undefined' ? globalAvatar : "");
             
             if (brandAvatar) {
@@ -618,7 +613,7 @@
                     brandAvatar.textContent = ""; 
                 } else {
                     brandAvatar.style.backgroundImage = "none";
-                    brandAvatar.style.borderRadius = "10px"; // 🟩 DIUBAH: Mengunci kelengkungan 10px saat gambar kosong
+                    brandAvatar.style.borderRadius = "10px"; 
                     brandAvatar.textContent = "EX"; 
                 }
             }
@@ -792,7 +787,6 @@
                 }, 0);
             });
 
-            // 🟩 DIPERBAIKI: Mengisolasi penuh render tab update dari karakter backslash agar foto profil lolos live online di GitHub Pages
             if (activeDashboardTab === "update") {
                 const liveStatusFeedSource = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
 
@@ -828,7 +822,6 @@
                         typeText = "Warning"; typeColor = "#eab308"; typeBg = "rgba(234, 179, 8, 0.15)";
                     }
 
-                    // 🟩 KUNCI PERBAIKAN: Menghitung variabel gaya visual avatar murni di luar string literal (Bebas dari Backslash)
                     let feedAvatarInlineStyle = "background-color: #2563eb;";
                     let feedAvatarInitialText = "EX";
                     
@@ -840,7 +833,7 @@
                     feedHtml += `
                         <div style="background: var(--bg-card); border: 1px solid #232738; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: left;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                                <!-- Menggunakan variabel gaya steril yang 100% aman dieksekusi seluruh browser internet -->
+
                                 <div style="width: 38px; height: 38px; border-radius: 50%; ${feedAvatarInlineStyle} display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white; flex-shrink: 0;">${feedAvatarInitialText}</div>
                                 
                                 <div style="display: flex; flex-direction: column; align-items: flex-start;">
@@ -866,15 +859,15 @@
                 if (searchQuery !== "") {
                     container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No client named "<strong style="color: white;">${searchQuery}</strong>" found in this tab.</div>`;
                 } else {
-                    // 🟩 DIUBAH: Jika tab Catalog kosong murni, tampilkan teks pengumuman kustom
+
                     if (activeDashboardTab === "catalog") {
                         container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 20px; font-size: 0.95rem; letter-spacing: 0.02em;">🗂️ The commission catalog feature is currently under construction. Stay tuned!</div>`;
                     } 
-                    // 🟩 DIUBAH: Jika tab Shop kosong murni, tampilkan teks pengumuman kustom
+
                     else if (activeDashboardTab === "shop") {
                         container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 20px; font-size: 0.95rem; letter-spacing: 0.02em;">🛒 The commercial asset shop is currently empty. Releasing soon!</div>`;
                     } 
-                    // Tampilkan format bawaan asli untuk tab biasa (Progress & Finished)
+
                     else {
                         const tabDisplayName = activeDashboardTab.charAt(0).toUpperCase() + activeDashboardTab.slice(1);
                         container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No items found in the ${tabDisplayName} category.</div>`;
