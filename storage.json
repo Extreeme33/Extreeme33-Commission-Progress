@@ -48,10 +48,10 @@
             "type": "warning"
         },
         {
-            "id": 1791646667482,
-            "content": "Test 4",
-            "date": "2026-10-10T15:37:47.482Z",
-            "type": "warning"
+            "id": 1791647449128,
+            "content": "This text is <font color=\"#ff0000\" size=\"7\"><b>deadly</b></font>",
+            "date": "2026-10-10T15:50:49.128Z",
+            "type": "update"
         }
     ]
 }
