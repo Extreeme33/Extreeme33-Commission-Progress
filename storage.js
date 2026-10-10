@@ -1,5 +1,4 @@
-
-                        let storageDatabase = [
+let storageDatabase = [
     {
         "id": 1791166228586,
         "img": "data:image/webp;base64,UklGRmgEAABXRUJQVlA4IFwEAADQIACdASr6APoAPnk8nEokoyMhonNoeJAPCWlu4XaxG/ONV36NsG+etoC+2DwxlJsEdJrNP8iuoZ0lg0ZpIx4jSRjxGkjHiNJGPEaOGctQD691omIXcBXgt8eV5ozYthmqkVcd2UZaMeI0kVLcfKFGPvcQm9nm8r0Mt7ed60ygbibaVkuXK9DSOpWOrX978q2OLTtjqPK9DSRjwkYJ77kV1yZXoaSMeExEkQ9VUQUBXSRiqIABZX0hEx0yH1RsLbdc/0rdg5doVcNfd7HZiIQvKiOOxAk6uFlehpHcgWGdF0GsU0xvRdlia/q04sgQD7E0kY8yqpGPEaSMeI0kY8RpIx4jSRjxGkjHiNJGPCQAAP7/0rUGF+id+moYmnWcJuiouRqfHyn2z+avdJPd74oiLhIlm2AMEGXU8GirR147v/8QvgSuAjQK/fmhsVirdHu2dHWOdtB2Lypy08DehIPQ/SlqQvrNi6WfI7kRuwuCEbwblsrfBpPNqUJAsh+I7daFuRV4745nXGKT0sXrYzRz8JpbBwc+DsW/bV8RYOxuRT6DTQ3Ol5T+rAO2JH7Tshh/twb9xWRngIkl5HTRbn6ufQ/LF9wpovVstzZJImlO+uxUeuqottK7UodC3Y89Qm4+qJfQBFgS7OzV/KbZgytWBbXEF5Oc7IjQaHwlFoyolARckDxNGe9Dv0mgaphkcjynNYDsA3SCHKgSLjf7j2n7y8adL2LYI1CIPmiTWCaxMVwB8K4lS8/4l7IvSy6IVKo6Gc1+gRgXKuKGeY4WmDbCQ0cmVyyacln4WFnDaJhWqwByilUfKN6usKTWtem27pqn7uCI+F8dEI3CR+symrvv78hi72Kg5V7TJhhuWU0gPljKiHdh+UJuGwMquatQk5qNYrjajycJ0rO3zWJ3Xq3UWPj3xr7YHNYhYXnh8k5qtN1hrRzN+HtDUCWpiH6wlk71YqGttC4imbjavuI/+fQNRs2R6IQ9DX35m7cey38TZCY36V6Maiaj5fvOch87gAAWkCSoHpLObwcCBQjfycLXyHO7Gr9CHZMjM79r5o3orwGZl8VVjPTsojvzLdIJe8OGdUi9zm7RET+g5kCZbk2LI33x8Fu4Wvj2Xt48jqW8J8nbc9+cEg67IgnkjNL4udfZ+EluF19B4C37+DvUoZLd+zgzlzUxCWOdm97eK4aehCTx/pmZpC260p6gp0Vfnx+2EWmsiksb3umdN+9t1M+toxdxJWWl53CNUTYQ6FFQAIps+Od6NFSLeFZ/cSDLi2vaFua8oyZ5w35AQre5dzM0nAIe3YgT/RAL7rOzeqxbnLRXRSif2u0a/XRJH+lNP1xzCaANL+gRShcnygL8BARPPB2IjT66Cwn81yzr/TMq6NAiQRnuNTKpuFMCLHXRYvZEJAA5TAGvkPDbnU2pmK8M4KAfove3BSZc7lpEU4W6FYOQMIUq5z3obLowK7iIoUJkptF2ply2IAAAAAA=",
@@ -25,9 +24,7 @@
         "bgY": 50
     }
 ];
-                        
-                        // Membungkus data status feed agar bisa dibaca dengan metode parsed.komisiData di halaman depan klien
-                        let adminStatusFeed = [
+let adminStatusFeed = [
     {
         "id": 1791639311052,
         "content": "test 1",
@@ -47,4 +44,3 @@
         "type": "announcement"
     }
 ];
-                    
