@@ -280,6 +280,57 @@
             transform: translateY(0);
         }
 
+        /* 🟩 BARU: Desain Balon Petunjuk Putih Kustom (About Me Tooltip) */
+        .brand-avatar-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* 🟩 DIUBAH: Struktur Segitiga Balon Baru (Dibalik Menghadap ke Bawah, Mengapung di Atas Avatar) */
+        .brand-avatar-container::after {
+            content: "";
+            position: absolute;
+            top: -8px; /* 🟩 Menempel di batas atas bingkai foto */
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            border-width: 6px 6px 0 6px;
+            border-style: solid;
+            /* Membalik arah jarum segitiga menunjuk ke bawah */
+            border-color: #ffffff transparent transparent transparent; 
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100000;
+            pointer-events: none;
+        }
+
+        /* 🟩 DIUBAH: Kotak Balon Utama Berwarna Putih Bersih (Terangkat Naik ke Atas Atap Foto Profil) */
+        .brand-avatar-container::before {
+            content: "About Me?";
+            position: absolute;
+            top: -36px; /* 🟩 Terbang pas mengambang di atas kepala foto profil */
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: #ffffff;
+            color: #0f111a; 
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            /* Bayangan bergeser halus ke bawah untuk memperkuat efek melayang */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); 
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: inherit;
+            letter-spacing: 0.02em;
+            z-index: 100000;
+            pointer-events: none;
+        }
+
+        /* Efek Pemicu: Balon Otomatis Membesar Meluncur Saat Mouse Mengarah (Hover) */
+        .brand-avatar-container:hover::before,
+        .brand-avatar-container:hover::after {
+            transform: translateX(-50%) scale(1);
+        }
+
     </style>
 	<script src="neutralino.js"></script>
 </head>
@@ -288,8 +339,18 @@
     <div id="dashboard" style="padding-top: 0px; margin-top: 12px; position: relative;">
 
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0px; padding-top: 0px; padding-bottom: 15px;">
+            <!-- 🟩 DIUBAH: Menyandingkan lingkaran avatar mini di sebelah kiri teks judul dasbor secara horizontal -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+            <!-- 🟩 DIUBAH: Menyisipkan kontainer pembungkus balon petunjuk kustom dengan jumlah spasi horizontal yang sama rata sejajar -->
+            <div class="brand-avatar-container">
+                <!-- 🟩 DIUBAH: Ukuran dimaksimalkan ke 50px dan border-radius ditingkatkan ke 10px agar proporsi kelengkungan sudutnya tetap proporsional -->
+                <div id="index-brand-avatar-view" style="width: 50px; height: 50px; border-radius: 10px; background: #2563eb; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; color: white; border: 1px solid #2d3142; flex-shrink: 0;">EX</div>
+            </div>
 
-            <div class="brand-title" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">Extreeme33 Dashboard</div>
+                <!-- Judul teks utama dasbor portofolio Anda -->
+                <div class="brand-title" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">Extreeme33 Dashboard</div>
+            </div>
+            
             
         </div>
 
@@ -383,6 +444,7 @@
                     if (parsed && !Array.isArray(parsed) && parsed.komisiData) {
                         itemDatabase = parsed.komisiData || [];
                         adminStatusFeed = parsed.statusFeed || []; 
+						globalAvatar = parsed.globalAvatar || "";
                     } else {
                         itemDatabase = Array.isArray(parsed) ? parsed : [];
                         adminStatusFeed = [];
@@ -401,8 +463,8 @@
                             if (cloudPackage) {
 
                                 window.storageDatabase = cloudPackage.storageDatabase || [];
-
                                 window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
+								window.globalAvatar = cloudPackage.globalAvatar || "";
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
                                 renderDashboard();
@@ -421,6 +483,7 @@
 		
         let itemDatabase = JSON.parse("[{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":55,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":8,\"workStage\":\"coloring\",\"lastUpdated\":\"2026-10-09T02:51:59.067Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"},{\"id\":1790830569465,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":12,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-10T16:27:09.726Z\"}]");
 		let adminStatusFeed = [];
+		let globalAvatar = "";
         let activeDashboardTab = "progress";
 
         function getOutlineShadow(useStroke, color) {
@@ -543,6 +606,21 @@
         function renderDashboard() {
             const container = document.getElementById('work-grid');
             if (!container) return;
+			
+            const brandAvatar = document.getElementById('index-brand-avatar-view');
+            const activeAvatarEnv = window.globalAvatar || (typeof globalAvatar !== 'undefined' ? globalAvatar : "");
+            
+            if (brandAvatar) {
+                if (activeAvatarEnv && activeAvatarEnv.trim() !== "") {
+                    brandAvatar.style.backgroundImage = `url('${activeAvatarEnv}')`;
+                    brandAvatar.textContent = ""; 
+                } else {
+                    brandAvatar.style.backgroundImage = "none";
+                    brandAvatar.style.borderRadius = "10px"; // 🟩 DIUBAH: Mengunci kelengkungan 10px saat gambar kosong
+                    brandAvatar.textContent = "EX"; 
+                }
+            }
+			
             container.innerHTML = "";
 
             if (!itemDatabase || itemDatabase.length === 0) {
@@ -712,8 +790,8 @@
                 }, 0);
             });
 
+            // 🟩 DIPERBAIKI: Logika tab UPDATE diisolasi dengan pembersihan string interpolasi ganda agar 100% bebas dari risiko crash
             if (activeDashboardTab === "update") {
-
                 const liveStatusFeedSource = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
 
                 if (!liveStatusFeedSource || liveStatusFeedSource.length === 0) {
@@ -722,21 +800,12 @@
                 }
 
                 let sortedStatusFeed = liveStatusFeedSource.slice();
-
-                const categoryPriority = {
-                    "announcement": 1,
-                    "warning": 2,
-                    "update": 3
-                };
+                const categoryPriority = { "announcement": 1, "warning": 2, "update": 3 };
 
                 sortedStatusFeed.sort((a, b) => {
                     const priorityA = categoryPriority[a.type] || 3;
                     const priorityB = categoryPriority[b.type] || 3;
-
-                    if (priorityA !== priorityB) {
-                        return priorityA - priorityB;
-                    }
-
+                    if (priorityA !== priorityB) return priorityA - priorityB;
                     const timeA = a.date ? new Date(a.date).getTime() : 0;
                     const timeB = b.date ? new Date(b.date).getTime() : 0;
                     return timeB - timeA;
@@ -752,29 +821,32 @@
                     let typeBg = "rgba(56, 189, 248, 0.15)";
 
                     if (post.type === "announcement") {
-                        typeText = "Announcement";
-                        typeColor = "#ef4444"; 
-                        typeBg = "rgba(239, 68, 68, 0.15)";
+                        typeText = "Announcement"; typeColor = "#ef4444"; typeBg = "rgba(239, 68, 68, 0.15)";
                     } else if (post.type === "warning") {
-                        typeText = "Warning";
-                        typeColor = "#eab308"; 
-                        typeBg = "rgba(234, 179, 8, 0.15)";
+                        typeText = "Warning"; typeColor = "#eab308"; typeBg = "rgba(234, 179, 8, 0.15)";
+                    }
+
+                    // 🟩 DIPERBAIKI: Menyederhanakan inline style avatar ke dalam variabel luar agar aman dari bentrokan tanda backtick
+                    let feedAvatarStyle = "background-color: #2563eb;";
+                    let feedAvatarText = "EX";
+                    
+                    if (activeAvatarEnv && activeAvatarEnv.trim() !== "") {
+                        feedAvatarStyle = `background-image: url('${activeAvatarEnv}'); background-size: cover; background-position: center;`;
+                        feedAvatarText = "";
                     }
 
                     feedHtml += `
                         <div style="background: var(--bg-card); border: 1px solid #232738; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: left;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                                <div style="width: 38px; height: 38px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white;">EX</div>
+                                <!-- Menggunakan variabel gaya luar yang 100% aman dan bersih -->
+                                <div style="width: 38px; height: 38px; border-radius: 50%; ${feedAvatarStyle} display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white; flex-shrink: 0;">${feedAvatarText}</div>
+                                
                                 <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                                    
                                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                         <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-main);">Extreeme33</span>
-                                        
                                         <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; font-size: 0.62rem; font-weight: bold; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; display: inline-block;">Admin</span>
-                                        
                                         <span style="background: ${typeBg}; color: ${typeColor}; border: 1px solid ${typeColor}; font-size: 0.62rem; font-weight: bold; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; display: inline-block;">${typeText}</span>
                                     </div>
-                                    
                                     <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">${localTimeText || 'Recent'}</span>
                                 </div>
                             </div>
