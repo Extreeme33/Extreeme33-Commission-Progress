@@ -280,17 +280,15 @@
             transform: translateY(0);
         }
 
-        /* 🟩 BARU: Desain Balon Petunjuk Putih Kustom (About Me Tooltip) */
         .brand-avatar-container {
             position: relative;
             display: inline-block;
         }
 
-        /* 🟩 DIUBAH: Struktur Segitiga Balon Baru (Dibalik Menghadap ke Bawah, Mengapung di Atas Avatar) */
         .brand-avatar-container::after {
             content: "";
             position: absolute;
-            top: -8px; /* 🟩 Menempel di batas atas bingkai foto */
+            top: -8px; 
             left: 50%;
             transform: translateX(-50%) scale(0);
             border-width: 6px 6px 0 6px;
@@ -301,11 +299,10 @@
             pointer-events: none;
         }
 
-        /* 🟩 DIUBAH: Kotak Balon Utama Berwarna Putih Bersih (Terangkat Naik ke Atas Atap Foto Profil) */
         .brand-avatar-container::before {
             content: "About Me?";
             position: absolute;
-            top: -36px; /* 🟩 Terbang pas mengambang di atas kepala foto profil */
+            top: -36px; 
             left: 50%;
             transform: translateX(-50%) scale(0);
             background: #ffffff;
