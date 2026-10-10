@@ -318,7 +318,7 @@
 
         <div class="grid-container" id="work-grid"></div>
 
-        <div class="pagination-container">
+        <div id="dashboard-pagination-wrapper" class="pagination-container">
             <div class="pager-buttons">
                 <button class="page-btn">&lt;</button>
                 <button class="page-btn active">1</button>
@@ -373,25 +373,32 @@
         }
 		
         async function syncDashboardPayload() {
-            console.log("Initiating workspace rendering handshake protocol...");
             try {
-                const isWebDeployment = window.location.hostname.includes('github.io') || window.location.protocol === 'https:';
-                
-                if (isWebDeployment || typeof Neutralino === 'undefined' || !Neutralino.storage) {
-                    console.log("Production Cloud View Active: Rendering compiled base64 data cards straight from memory context stream.");
+                if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
+                    let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
+                    const parsed = JSON.parse(rawData);
+                    
+                    if (parsed && !Array.isArray(parsed) && parsed.komisiData) {
+                        itemDatabase = parsed.komisiData || [];
+                        adminStatusFeed = parsed.statusFeed || []; 
+                    } else {
+                        itemDatabase = Array.isArray(parsed) ? parsed : [];
+                        adminStatusFeed = [];
+                    }
                 } else {
-                    let data = await Neutralino.storage.getData('equipdex_demo_payload');
-                    itemDatabase = JSON.parse(data);
-                    console.log("Offline local storage layer synchronized cleanly.");
+                    itemDatabase = [];
+                    adminStatusFeed = [];
                 }
-            } catch(e) {
-                console.warn("Non-fatal storage reading shift encountered, fallback rendering active:", e);
+            } catch (err) {
+                console.warn("Offline registry pipeline bypass active:", err);
+                itemDatabase = [];
+                adminStatusFeed = [];
             }
-            renderDashboard(); 
+            renderDashboard();
         }
 		
         let itemDatabase = JSON.parse("[{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":55,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":8,\"workStage\":\"coloring\",\"lastUpdated\":\"2026-10-09T02:51:59.067Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"},{\"id\":1790830569465,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"isLocked\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":12,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-09T11:28:01.244Z\"}]");
-		
+		let adminStatusFeed = [];
         let activeDashboardTab = "progress";
 
         function getOutlineShadow(useStroke, color) {
@@ -676,6 +683,79 @@
                 }, 0);
             });
 
+            if (activeDashboardTab === "update") {
+                if (!adminStatusFeed || adminStatusFeed.length === 0) {
+                    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No status has been updated in this category.</div>`;
+                    return;
+                }
+
+                let sortedStatusFeed = adminStatusFeed.slice();
+
+                const categoryPriority = {
+                    "announcement": 1,
+                    "warning": 2,
+                    "update": 3
+                };
+
+                sortedStatusFeed.sort((a, b) => {
+                    const priorityA = categoryPriority[a.type] || 3;
+                    const priorityB = categoryPriority[b.type] || 3;
+
+                    if (priorityA !== priorityB) {
+                        return priorityA - priorityB;
+                    }
+
+                    const timeA = a.date ? new Date(a.date).getTime() : 0;
+                    const timeB = b.date ? new Date(b.date).getTime() : 0;
+                    return timeB - timeA;
+                });
+
+                let feedHtml = `<div style="grid-column: 1/-1; width: 100%; max-width: 550px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding: 10px 0;">`;
+
+                sortedStatusFeed.forEach(post => {
+                    const localTimeText = formatToClientTimeZone(post.date);
+                    
+                    let typeText = "Update";
+                    let typeColor = "#38bdf8"; 
+                    let typeBg = "rgba(56, 189, 248, 0.15)";
+
+                    if (post.type === "announcement") {
+                        typeText = "Announcement";
+                        typeColor = "#ef4444"; 
+                        typeBg = "rgba(239, 68, 68, 0.15)";
+                    } else if (post.type === "warning") {
+                        typeText = "Warning";
+                        typeColor = "#eab308"; 
+                        typeBg = "rgba(234, 179, 8, 0.15)";
+                    }
+
+                    feedHtml += `
+                        <div style="background: var(--bg-card); border: 1px solid #232738; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                                <div style="width: 38px; height: 38px; border-radius: 50%; background: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white;">EX</div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                                    
+                                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-main);">Extreeme33</span>
+                                        
+                                        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; font-size: 0.62rem; font-weight: bold; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; display: inline-block;">Admin</span>
+                                        
+                                        <span style="background: ${typeBg}; color: ${typeColor}; border: 1px solid ${typeColor}; font-size: 0.62rem; font-weight: bold; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.2; display: inline-block;">${typeText}</span>
+                                    </div>
+                                    
+                                    <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">${localTimeText || 'Recent'}</span>
+                                </div>
+                            </div>
+                            <div style="color: #e4e6eb; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;">${post.content}</div>
+                        </div>
+                    `;
+                });
+
+                feedHtml += `</div>`;
+                container.innerHTML = feedHtml;
+                return;
+            }
+
             if (visibleCardsCount === 0) {
                 if (searchQuery !== "") {
                     container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No client named "<strong style="color: white;">${searchQuery}</strong>" found in this tab.</div>`;
@@ -699,10 +779,16 @@
                     if (selectedText === "progress" || selectedText === "finished" || selectedText === "update") {
                         activeDashboardTab = selectedText;
                         
+                        const paginationRow = document.getElementById('dashboard-pagination-wrapper');
+
                         if (selectedText === "update") {
                             if (searchRow) searchRow.style.display = "none";
+
+                            if (paginationRow) paginationRow.style.display = "none";
                         } else {
                             if (searchRow) searchRow.style.display = "flex";
+
+                            if (paginationRow) paginationRow.style.display = "flex";
                         }
                         
                         renderDashboard();
