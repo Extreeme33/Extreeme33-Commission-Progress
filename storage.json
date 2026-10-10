@@ -30,12 +30,6 @@
     ],
     "adminStatusFeed": [
         {
-            "id": 1791639311052,
-            "content": "test 1",
-            "date": "2026-10-10T13:35:11.052Z",
-            "type": "update"
-        },
-        {
             "id": 1791639313740,
             "content": "test 2",
             "date": "2026-10-10T13:35:13.740Z",
@@ -51,6 +45,12 @@
             "id": 1791645529221,
             "content": "Test 3",
             "date": "2026-10-10T15:18:49.221Z",
+            "type": "warning"
+        },
+        {
+            "id": 1791646667482,
+            "content": "Test 4",
+            "date": "2026-10-10T15:37:47.482Z",
             "type": "warning"
         }
     ]

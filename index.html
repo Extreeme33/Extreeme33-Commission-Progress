@@ -373,7 +373,7 @@
 		
         async function syncDashboardPayload() {
             try {
-                // 1. JALUR OFFLINE LOKAL (Saat dijalankan melalui neu run di komputer Anda)
+
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                     let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
                     const parsed = JSON.parse(rawData);
@@ -387,8 +387,7 @@
                     }
                     renderDashboard();
                 } else {
-                    // 2. JALUR ONLINE GITHUB PAGES (Dibuka oleh pengunjung di internet menggunakan browser umum)
-                    // 🟩 REVOLUSI: Mengunduh data storage.json eksternal menggunakan pipa fetch asinkron (100% Anti-Blokir Browser)
+
                     console.log("Neutralino context absent. Initializing remote fetch sequence for storage.json...");
                     
                     fetch('storage.json')
@@ -398,9 +397,9 @@
                         })
                         .then(cloudPackage => {
                             if (cloudPackage) {
-                                // Bongkar isi paket gambar base64 ke memori pembentuk style kartu
+
                                 window.storageDatabase = cloudPackage.storageDatabase || [];
-                                // Bongkar isi postingan feed status Facebook Anda ke tab UPDATE
+
                                 window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
@@ -596,15 +595,12 @@
                 const subStatus3Text = getSubStatus3Text(item.repeatOrder || 0);
                 const rect3DisplayStatus = (!item.repeatOrder || parseInt(item.repeatOrder) <= 0) ? "none" : "flex";
 
-                // 🟩 DIUBAH: Mendeteksi sumber gambar base64 online dari window.storageDatabase secara langsung saat render awal
                 const activeStorageEnv = window.storageDatabase || (typeof storageDatabase !== 'undefined' ? storageDatabase : undefined);
                 const cloudAssetItem = activeStorageEnv ? activeStorageEnv.find(s => s.id === item.id) : null;
 
-                // Tentukan gambar avatar profil kiri secara dinamis (Aman untuk Offline & Online)
                 let itemImgStr = cloudAssetItem ? (cloudAssetItem.img || '') : (item.imgStatic && item.img ? item.imgStatic : (item.img || ''));
                 let inlineCardStyle = `background-color: ${item.cardBgColor || '#161925'};`;
 
-                // Setel pelapis gambar latar belakang kartu besar
                 const finalBgImg = cloudAssetItem ? cloudAssetItem.cardBgImg : item.cardBgImg;
                 const finalZoom = cloudAssetItem ? cloudAssetItem.bgZoom : item.bgZoom;
                 const finalX = cloudAssetItem ? cloudAssetItem.bgX : item.bgX;
@@ -668,15 +664,13 @@
                     const cardElement = document.getElementById(`demo-card-${item.id}`);
                     const previewIcon = cardElement ? cardElement.querySelector('.client-avatar-wrapper') : null;
                     
-                    // Ambil referensi array gambar global dari window
                     const activeStorage = window.storageDatabase || (typeof storageDatabase !== 'undefined' ? storageDatabase : undefined);
                     const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
 
-                    // Tarik aset gambar base64 online secara dinamis
                     if (typeof activeStorage !== 'undefined') {
                         const mediaAsset = activeStorage.find(s => s.id === item.id);
                         if (mediaAsset) {
-                            // 🟩 DIUBAH: Langsung memanggil mediaAsset.img murni untuk menjamin avatar online langsung menyala sukses
+
                             const runtimeImg = mediaAsset.img || '';
                             
                             if (previewIcon && runtimeImg) {
@@ -691,7 +685,6 @@
                         }
                     }
 
-                    // Hover profile listeners
                     if (previewIcon) {
                         previewIcon.addEventListener('mouseenter', (e) => {
                             e.stopPropagation();
@@ -718,7 +711,7 @@
             });
 
             if (activeDashboardTab === "update") {
-                // 🟩 DIUBAH: Mengambil array linimasa status resmi dari paket window global hasil unduhan storage.json cloud
+
                 const liveStatusFeedSource = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
 
                 if (!liveStatusFeedSource || liveStatusFeedSource.length === 0) {
@@ -726,7 +719,6 @@
                     return;
                 }
 
-                // Jalankan pengurutan prioritas dari sumber data cloud yang valid
                 let sortedStatusFeed = liveStatusFeedSource.slice();
 
                 const categoryPriority = {
@@ -856,17 +848,15 @@
                 });
             }
 
-            // 🟩 DIUBAH: Sistem Pemicu Otomatis Hibrida (Aman untuk Offline Lokal & Cloud GitHub Pages)
             function initializeDashboardCore() {
                 console.log("Execution signal received. Synchronizing payload parameters...");
                 syncDashboardPayload();
             }
 
-            // Jalur A (Offline Lokal): Jika Neutralino aktif, langsung jalankan pancingan awal
             if (typeof Neutralino !== 'undefined') {
                 initializeDashboardCore();
             } else {
-                // Jalur B (Online Cloud): Menunggu hingga asset storage.js selesai terunduh sempurna di memori browser
+
                 if (document.readyState === 'complete') {
                     initializeDashboardCore();
                 } else {
@@ -881,7 +871,6 @@
             }
         });
 
-        // 🟩 FUNGSI GLOBAL BARU: Sebagai jembatan ketukan balik jika storage.js selesai terunduh lebih cepat
         function triggerCloudStorageCallback() {
             if (typeof activeDashboardTab !== 'undefined') {
                 console.log("Storage asset callback pulse received. Refreshing layout engines...");
