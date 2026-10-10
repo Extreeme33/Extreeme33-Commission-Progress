@@ -25,6 +25,8 @@
         "bgY": 50
     }
 ];
+                        
+                        // Membungkus data status feed agar bisa dibaca dengan metode parsed.komisiData di halaman depan klien
                         let adminStatusFeed = [
     {
         "id": 1791639311052,

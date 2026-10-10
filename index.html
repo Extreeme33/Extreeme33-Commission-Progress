@@ -374,6 +374,7 @@
 		
         async function syncDashboardPayload() {
             try {
+                // 1. JALUR OFFLINE LOKAL (Aplikasi Komputer): Membaca storage.json lokal
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                     let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
                     const parsed = JSON.parse(rawData);
@@ -386,13 +387,13 @@
                         adminStatusFeed = [];
                     }
                 } else {
-                    itemDatabase = [];
-                    adminStatusFeed = [];
+                    // 2. JALUR ONLINE GITHUB PAGES: Neutralino tidak ada, biarkan data bawaan html bekerja
+                    // 🟩 PERBAIKAN UTAMA: Hapus baris pengosongan array agar data dari GitHub tidak terbuang!
+                    console.log("Running on GitHub Pages. Preserving injected itemDatabase and cloud storageDatabase.");
                 }
             } catch (err) {
                 console.warn("Offline registry pipeline bypass active:", err);
-                itemDatabase = [];
-                adminStatusFeed = [];
+                // 🟩 PERBAIKAN UTAMA: Jangan paksa mengosongkan database saat terjadi bypass internet
             }
             renderDashboard();
         }
