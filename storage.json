@@ -36,12 +36,6 @@
             "type": "update"
         },
         {
-            "id": 1791639343948,
-            "content": "I love you",
-            "date": "2026-10-10T13:35:43.948Z",
-            "type": "announcement"
-        },
-        {
             "id": 1791645529221,
             "content": "Test 3",
             "date": "2026-10-10T15:18:49.221Z",
@@ -54,9 +48,9 @@
             "type": "update"
         },
         {
-            "id": 1791668334777,
-            "content": "Test 4",
-            "date": "2026-10-10T21:38:54.777Z",
+            "id": 1791668567905,
+            "content": "You cool",
+            "date": "2026-10-10T21:42:47.905Z",
             "type": "announcement"
         }
     ],
