@@ -46,6 +46,12 @@
             "content": "I love you",
             "date": "2026-10-10T13:35:43.948Z",
             "type": "announcement"
+        },
+        {
+            "id": 1791645051972,
+            "content": "Test 3",
+            "date": "2026-10-10T15:10:51.972Z",
+            "type": "warning"
         }
     ]
 }

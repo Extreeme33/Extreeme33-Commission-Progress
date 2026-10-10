@@ -596,14 +596,22 @@
                 const subStatus3Text = getSubStatus3Text(item.repeatOrder || 0);
                 const rect3DisplayStatus = (!item.repeatOrder || parseInt(item.repeatOrder) <= 0) ? "none" : "flex";
 
-                let itemImgStr = '';
+                // 🟩 DIUBAH: Mendeteksi sumber gambar base64 online dari window.storageDatabase secara langsung saat render awal
+                const activeStorageEnv = window.storageDatabase || (typeof storageDatabase !== 'undefined' ? storageDatabase : undefined);
+                const cloudAssetItem = activeStorageEnv ? activeStorageEnv.find(s => s.id === item.id) : null;
+
+                // Tentukan gambar avatar profil kiri secara dinamis (Aman untuk Offline & Online)
+                let itemImgStr = cloudAssetItem ? (cloudAssetItem.img || '') : (item.imgStatic && item.img ? item.imgStatic : (item.img || ''));
                 let inlineCardStyle = `background-color: ${item.cardBgColor || '#161925'};`;
 
-                if (typeof storageDatabase === 'undefined') {
-                    itemImgStr = item.imgStatic && item.img ? item.imgStatic : (item.img || '');
-                    if (item.cardBgImg) {
-                        inlineCardStyle += ` background-image: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('${item.cardBgImg}'); background-size: ${item.bgZoom || 100}%; background-position: ${item.bgX || 50}% ${item.bgY || 50}%; background-repeat: no-repeat;`;
-                    }
+                // Setel pelapis gambar latar belakang kartu besar
+                const finalBgImg = cloudAssetItem ? cloudAssetItem.cardBgImg : item.cardBgImg;
+                const finalZoom = cloudAssetItem ? cloudAssetItem.bgZoom : item.bgZoom;
+                const finalX = cloudAssetItem ? cloudAssetItem.bgX : item.bgX;
+                const finalY = cloudAssetItem ? cloudAssetItem.bgY : item.bgY;
+
+                if (finalBgImg) {
+                    inlineCardStyle += ` background-image: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('${finalBgImg}'); background-size: ${finalZoom || 100}%; background-position: ${finalX || 50}% ${finalY || 50}%; background-repeat: no-repeat;`;
                 }
 
                 const shadowRule = getOutlineShadow(item.useStroke, item.strokeColor);
@@ -710,12 +718,16 @@
             });
 
             if (activeDashboardTab === "update") {
-                if (!adminStatusFeed || adminStatusFeed.length === 0) {
+                // 🟩 DIUBAH: Mengambil array linimasa status resmi dari paket window global hasil unduhan storage.json cloud
+                const liveStatusFeedSource = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
+
+                if (!liveStatusFeedSource || liveStatusFeedSource.length === 0) {
                     container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No status has been updated in this category.</div>`;
                     return;
                 }
 
-                let sortedStatusFeed = adminStatusFeed.slice();
+                // Jalankan pengurutan prioritas dari sumber data cloud yang valid
+                let sortedStatusFeed = liveStatusFeedSource.slice();
 
                 const categoryPriority = {
                     "announcement": 1,
