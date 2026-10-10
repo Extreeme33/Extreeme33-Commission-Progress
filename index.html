@@ -916,12 +916,12 @@
             const lastReadShop     = localStorage.getItem('last_read_time_shop') || 0;
             const lastReadUpdate   = localStorage.getItem('last_read_time_update') || 0;
 
-            // C. Lakukan komparasi: Nyalakan titik jika waktu data buatan admin lebih besar dari waktu buka user
-            document.getElementById('dot-progress').style.display = (newestProgressTime > lastReadProgress && activeDashboardTab !== "progress") ? "block" : "none";
-            document.getElementById('dot-finished').style.display = (newestFinishedTime > lastReadFinished && activeDashboardTab !== "finished") ? "block" : "none";
-            document.getElementById('dot-update').style.display   = (newestUpdateTime > lastReadUpdate && activeDashboardTab !== "update") ? "block" : "none";
+            // 🟩 DIUBAH: Logika diperbaiki secara total! Titik hijau akan tetap menyala di tab mana pun jika ada data baru buatan admin yang belum pernah diklik secara manual.
+            document.getElementById('dot-progress').style.display = (newestProgressTime > lastReadProgress) ? "block" : "none";
+            document.getElementById('dot-finished').style.display = (newestFinishedTime > lastReadFinished) ? "block" : "none";
+            document.getElementById('dot-update').style.display   = (newestUpdateTime > lastReadUpdate) ? "block" : "none";
             
-            // Tab Catalog & Shop dipaksa mati (none) karena datanya masih kosong murni saat ini
+            // Tab Catalog & Shop tetap dikunci mati (none) karena datanya masih kosong murni saat ini
             document.getElementById('dot-catalog').style.display  = "none";
             document.getElementById('dot-shop').style.display     = "none";
         }
