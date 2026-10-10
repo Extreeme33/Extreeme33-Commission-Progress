@@ -328,7 +328,6 @@
         </div>
     </div>
 	
-	<script src="storage.js" async></script>
     <script>
 	
         try {
@@ -374,7 +373,7 @@
 		
         async function syncDashboardPayload() {
             try {
-                // 1. JALUR OFFLINE LOKAL (Aplikasi Komputer): Membaca storage.json lokal
+                // 1. JALUR OFFLINE LOKAL (Saat dijalankan melalui neu run di komputer Anda)
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                     let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
                     const parsed = JSON.parse(rawData);
@@ -386,16 +385,37 @@
                         itemDatabase = Array.isArray(parsed) ? parsed : [];
                         adminStatusFeed = [];
                     }
+                    renderDashboard();
                 } else {
-                    // 2. JALUR ONLINE GITHUB PAGES: Neutralino tidak ada, biarkan data bawaan html bekerja
-                    // 🟩 PERBAIKAN UTAMA: Hapus baris pengosongan array agar data dari GitHub tidak terbuang!
-                    console.log("Running on GitHub Pages. Preserving injected itemDatabase and cloud storageDatabase.");
+                    // 2. JALUR ONLINE GITHUB PAGES (Dibuka oleh pengunjung di internet menggunakan browser umum)
+                    // 🟩 REVOLUSI: Mengunduh data storage.json eksternal menggunakan pipa fetch asinkron (100% Anti-Blokir Browser)
+                    console.log("Neutralino context absent. Initializing remote fetch sequence for storage.json...");
+                    
+                    fetch('storage.json')
+                        .then(response => {
+                            if (!response.ok) throw new Error("Network storage reference was not resolved properly.");
+                            return response.json();
+                        })
+                        .then(cloudPackage => {
+                            if (cloudPackage) {
+                                // Bongkar isi paket gambar base64 ke memori pembentuk style kartu
+                                window.storageDatabase = cloudPackage.storageDatabase || [];
+                                // Bongkar isi postingan feed status Facebook Anda ke tab UPDATE
+                                window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
+                                
+                                console.log("Cloud JSON payloads synchronized successfully!");
+                                renderDashboard();
+                            }
+                        })
+                        .catch(fetchErr => {
+                            console.error("Cloud storage pipeline exception captured:", fetchErr);
+                            renderDashboard();
+                        });
                 }
             } catch (err) {
-                console.warn("Offline registry pipeline bypass active:", err);
-                // 🟩 PERBAIKAN UTAMA: Jangan paksa mengosongkan database saat terjadi bypass internet
+                console.warn("Global dashboard sync routine bypass active:", err);
+                renderDashboard();
             }
-            renderDashboard();
         }
 		
         let itemDatabase = JSON.parse("[{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":55,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":8,\"workStage\":\"coloring\",\"lastUpdated\":\"2026-10-09T02:51:59.067Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"},{\"id\":1790830569465,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":12,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-09T11:28:01.244Z\"}]");
@@ -638,17 +658,21 @@
 
                 setTimeout(() => {
                     const cardElement = document.getElementById(`demo-card-${item.id}`);
-                    const previewIcon = document.getElementById(`demo-img-${item.id}`);
+                    const previewIcon = cardElement ? cardElement.querySelector('.client-avatar-wrapper') : null;
                     
-                    if (typeof storageDatabase !== 'undefined') {
-                        const mediaAsset = storageDatabase.find(s => s.id === item.id);
+                    // Ambil referensi array gambar global dari window
+                    const activeStorage = window.storageDatabase || (typeof storageDatabase !== 'undefined' ? storageDatabase : undefined);
+                    const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
+
+                    // Tarik aset gambar base64 online secara dinamis
+                    if (typeof activeStorage !== 'undefined') {
+                        const mediaAsset = activeStorage.find(s => s.id === item.id);
                         if (mediaAsset) {
                             const runtimeImg = item.imgStatic && mediaAsset.img ? item.imgStatic : mediaAsset.img;
                             
                             if (previewIcon && runtimeImg) {
                                 previewIcon.style.backgroundImage = `url('${runtimeImg}')`;
                             }
-
                             if (cardElement && mediaAsset.cardBgImg) {
                                 cardElement.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('${mediaAsset.cardBgImg}')`;
                                 cardElement.style.backgroundSize = `${mediaAsset.bgZoom || 100}%`;
@@ -658,21 +682,21 @@
                         }
                     }
 
+                    // Hover profile listeners
                     if (previewIcon) {
                         previewIcon.addEventListener('mouseenter', (e) => {
                             e.stopPropagation();
-                            if (typeof storageDatabase !== 'undefined') {
-                                const mediaAsset = storageDatabase.find(s => s.id === item.id);
+                            if (typeof activeStorage !== 'undefined') {
+                                const mediaAsset = activeStorage.find(s => s.id === item.id);
                                 if (mediaAsset && mediaAsset.img) previewIcon.style.backgroundImage = `url('${mediaAsset.img}')`;
-                            } else {
-                                if (item.img) previewIcon.style.backgroundImage = `url('${item.img}')`;
+                            } else if (item.img) {
+                                previewIcon.style.backgroundImage = `url('${item.img}')`;
                             }
                         });
-                        
                         previewIcon.addEventListener('mouseleave', (e) => {
                             e.stopPropagation();
-                            if (typeof storageDatabase !== 'undefined') {
-                                const mediaAsset = storageDatabase.find(s => s.id === item.id);
+                            if (typeof activeStorage !== 'undefined') {
+                                const mediaAsset = activeStorage.find(s => s.id === item.id);
                                 const runtimeImg = item.imgStatic && mediaAsset ? item.imgStatic : (mediaAsset ? mediaAsset.img : '');
                                 previewIcon.style.backgroundImage = `url('${runtimeImg}')`;
                             } else {
