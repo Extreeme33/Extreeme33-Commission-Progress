@@ -350,12 +350,13 @@
         <div style="width: 100%; border-top: 1px solid #2d3142; margin-bottom: 15px;"></div>
 
         <div style="display: flex; justify-content: center; width: 100%; padding-bottom: 15px;">
+            <!-- 🟩 DIUBAH: Mengonfigurasi tata letak elemen menu agar mendukung penyematan absolut titik notifikasi hijau -->
             <ul class="nav-filters" style="margin-bottom: 0; padding-bottom: 0; border: none; display: flex; gap: 30px; list-style: none; margin: 0; padding: 0;">
-                <li class="nav-item active" style="cursor: pointer;">Progress</li>
-                <li class="nav-item" style="cursor: pointer;">Finished</li>
-				<li class="nav-item" style="cursor: pointer;">Catalog</li>
-                <li class="nav-item" style="cursor: pointer;">Shop</li>
-                <li class="nav-item" style="cursor: pointer;">Update</li>
+                <li class="nav-item active" style="cursor: pointer; position: relative; display: inline-block;">Progress<span class="notif-dot" id="dot-progress" style="display: none; position: absolute; top: -2px; right: -8px; width: 6px; height: 6px; background-color: var(--accent-green, #10b981); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green, #10b981);"></span></li>
+                <li class="nav-item" style="cursor: pointer; position: relative; display: inline-block;">Finished<span class="notif-dot" id="dot-finished" style="display: none; position: absolute; top: -2px; right: -8px; width: 6px; height: 6px; background-color: var(--accent-green, #10b981); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green, #10b981);"></span></li>
+                <li class="nav-item" style="cursor: pointer; position: relative; display: inline-block;">Catalog<span class="notif-dot" id="dot-catalog" style="display: none; position: absolute; top: -2px; right: -8px; width: 6px; height: 6px; background-color: var(--accent-green, #10b981); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green, #10b981);"></span></li>
+                <li class="nav-item" style="cursor: pointer; position: relative; display: inline-block;">Shop<span class="notif-dot" id="dot-shop" style="display: none; position: absolute; top: -2px; right: -8px; width: 6px; height: 6px; background-color: var(--accent-green, #10b981); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green, #10b981);"></span></li>
+                <li class="nav-item" style="cursor: pointer; position: relative; display: inline-block;">Update<span class="notif-dot" id="dot-update" style="display: none; position: absolute; top: -2px; right: -8px; width: 6px; height: 6px; background-color: var(--accent-green, #10b981); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green, #10b981);"></span></li>
             </ul>
         </div>
 
@@ -597,6 +598,7 @@
         }
 		
         function renderDashboard() {
+            calculateTabNotifications();		
             const container = document.getElementById('work-grid');
             if (!container) return;
 			
@@ -873,6 +875,48 @@
             }
         }
 
+        // 🟩 FUNGSI BARU: Mesin penghitung komparasi timestamp penentu aktifnya titik hijau notifikasi tab
+        function calculateTabNotifications() {
+            // Ambil data feed resmi yang siap dibaca dari lingkungan luring maupun daring
+            const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
+            const activeItems = itemDatabase || [];
+
+            // A. Cari waktu pembaruan terbaru untuk masing-masing tab kategori data
+            let newestProgressTime = 0;
+            let newestFinishedTime = 0;
+            let newestUpdateTime = 0;
+
+            // 1. Scan timestamp terbaru untuk data kartu komisi
+            activeItems.forEach(item => {
+                const itemTime = item.lastUpdated ? new Date(item.lastUpdated).getTime() : 0;
+                const status = item.status || "progress";
+                if (status === "progress" && itemTime > newestProgressTime) newestProgressTime = itemTime;
+                if (status === "finished" && itemTime > newestFinishedTime) newestFinishedTime = itemTime;
+            });
+
+            // 2. Scan timestamp terbaru untuk data postingan status Facebook
+            activeFeed.forEach(post => {
+                const postTime = post.date ? new Date(post.date).getTime() : 0;
+                if (postTime > newestUpdateTime) newestUpdateTime = postTime;
+            });
+
+            // B. Ambil catatan waktu klik terakhir kali user dari localStorage browser
+            const lastReadProgress = localStorage.getItem('last_read_time_progress') || 0;
+            const lastReadFinished = localStorage.getItem('last_read_time_finished') || 0;
+            const lastReadCatalog  = localStorage.getItem('last_read_time_catalog') || 0;
+            const lastReadShop     = localStorage.getItem('last_read_time_shop') || 0;
+            const lastReadUpdate   = localStorage.getItem('last_read_time_update') || 0;
+
+            // C. Lakukan komparasi: Nyalakan titik jika waktu data buatan admin lebih besar dari waktu buka user
+            document.getElementById('dot-progress').style.display = (newestProgressTime > lastReadProgress && activeDashboardTab !== "progress") ? "block" : "none";
+            document.getElementById('dot-finished').style.display = (newestFinishedTime > lastReadFinished && activeDashboardTab !== "finished") ? "block" : "none";
+            document.getElementById('dot-update').style.display   = (newestUpdateTime > lastReadUpdate && activeDashboardTab !== "update") ? "block" : "none";
+            
+            // Tab Catalog & Shop dipaksa mati (none) karena datanya masih kosong murni saat ini
+            document.getElementById('dot-catalog').style.display  = "none";
+            document.getElementById('dot-shop').style.display     = "none";
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.nav-filters .nav-item');
             const searchRow = document.getElementById('search-bar-row-wrapper'); 
@@ -886,18 +930,20 @@
                     if (selectedText === "progress" || selectedText === "finished" || selectedText === "catalog" || selectedText === "shop" || selectedText === "update") {
                         activeDashboardTab = selectedText;
                         
+                        // 🟩 DIUBAH: Catat waktu detik klik user saat ini ke dalam localStorage untuk menandai tab sudah dibaca
+                        localStorage.setItem('last_read_time_' + selectedText, Date.now());
+                        
                         const paginationRow = document.getElementById('dashboard-pagination-wrapper');
-
                         if (selectedText === "update") {
                             if (searchRow) searchRow.style.display = "none";
-
                             if (paginationRow) paginationRow.style.display = "none";
                         } else {
                             if (searchRow) searchRow.style.display = "flex";
-
                             if (paginationRow) paginationRow.style.display = "flex";
                         }
                         
+                        // Segarkan perhitungan notifikasi dan gambar ulang layar dasbor
+                        calculateTabNotifications();
                         renderDashboard();
                     }
                 });
