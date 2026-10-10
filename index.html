@@ -668,7 +668,8 @@
                     if (typeof activeStorage !== 'undefined') {
                         const mediaAsset = activeStorage.find(s => s.id === item.id);
                         if (mediaAsset) {
-                            const runtimeImg = item.imgStatic && mediaAsset.img ? item.imgStatic : mediaAsset.img;
+                            // 🟩 DIUBAH: Langsung memanggil mediaAsset.img murni untuk menjamin avatar online langsung menyala sukses
+                            const runtimeImg = mediaAsset.img || '';
                             
                             if (previewIcon && runtimeImg) {
                                 previewIcon.style.backgroundImage = `url('${runtimeImg}')`;
