@@ -299,6 +299,8 @@
             <ul class="nav-filters" style="margin-bottom: 0; padding-bottom: 0; border: none; display: flex; gap: 30px; list-style: none; margin: 0; padding: 0;">
                 <li class="nav-item active" style="cursor: pointer;">Progress</li>
                 <li class="nav-item" style="cursor: pointer;">Finished</li>
+				<li class="nav-item" style="cursor: pointer;">Catalog</li>
+                <li class="nav-item" style="cursor: pointer;">Shop</li>
                 <li class="nav-item" style="cursor: pointer;">Update</li>
             </ul>
         </div>
@@ -417,7 +419,7 @@
             }
         }
 		
-        let itemDatabase = JSON.parse("[{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":55,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":8,\"workStage\":\"coloring\",\"lastUpdated\":\"2026-10-09T02:51:59.067Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"},{\"id\":1790830569465,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":12,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-09T11:28:01.244Z\"}]");
+        let itemDatabase = JSON.parse("[{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":55,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":8,\"workStage\":\"coloring\",\"lastUpdated\":\"2026-10-09T02:51:59.067Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"},{\"id\":1790830569465,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":12,\"workStage\":\"none\",\"lastUpdated\":\"2026-10-10T16:27:09.726Z\"}]");
 		let adminStatusFeed = [];
         let activeDashboardTab = "progress";
 
@@ -790,8 +792,19 @@
                 if (searchQuery !== "") {
                     container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No client named "<strong style="color: white;">${searchQuery}</strong>" found in this tab.</div>`;
                 } else {
-                    const tabDisplayName = activeDashboardTab.charAt(0).toUpperCase() + activeDashboardTab.slice(1);
-                    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No items found in the ${tabDisplayName} category.</div>`;
+                    // 🟩 DIUBAH: Jika tab Catalog kosong murni, tampilkan teks pengumuman kustom
+                    if (activeDashboardTab === "catalog") {
+                        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 20px; font-size: 0.95rem; letter-spacing: 0.02em;">🗂️ The commission catalog feature is currently under construction. Stay tuned!</div>`;
+                    } 
+                    // 🟩 DIUBAH: Jika tab Shop kosong murni, tampilkan teks pengumuman kustom
+                    else if (activeDashboardTab === "shop") {
+                        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 20px; font-size: 0.95rem; letter-spacing: 0.02em;">🛒 The commercial asset shop is currently empty. Releasing soon!</div>`;
+                    } 
+                    // Tampilkan format bawaan asli untuk tab biasa (Progress & Finished)
+                    else {
+                        const tabDisplayName = activeDashboardTab.charAt(0).toUpperCase() + activeDashboardTab.slice(1);
+                        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No items found in the ${tabDisplayName} category.</div>`;
+                    }
                 }
             }
         }
@@ -806,7 +819,7 @@
                     this.classList.add('active');
 					
                     const selectedText = this.textContent.trim().toLowerCase();
-                    if (selectedText === "progress" || selectedText === "finished" || selectedText === "update") {
+                    if (selectedText === "progress" || selectedText === "finished" || selectedText === "catalog" || selectedText === "shop" || selectedText === "update") {
                         activeDashboardTab = selectedText;
                         
                         const paginationRow = document.getElementById('dashboard-pagination-wrapper');
