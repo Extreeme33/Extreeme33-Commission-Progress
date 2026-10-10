@@ -448,7 +448,16 @@
 
                     console.log("Neutralino context absent. Initializing remote fetch sequence for storage.json...");
                     
-                    fetch('storage.json')
+                    // A. Buat penanda versi pintar berdasarkan jumlah data status feed admin yang tertanam di HTML Anda
+                    // Jika admin belum membuat status apa pun, berikan nilai default "1"
+                    let contentVersionId = 1;
+                    if (typeof adminStatusFeed !== 'undefined' && adminStatusFeed.length > 0) {
+                        // Mengambil ID postingan status paling terakhir sebagai penanda versi unik
+                        contentVersionId = adminStatusFeed[adminStatusFeed.length - 1].id || adminStatusFeed.length;
+                    }
+
+                    // 🟩 DIUBAH: Menggunakan ?v=VERSION_ID. Browser hanya download jika admin merilis data baru di cloud!
+                    fetch('storage.json?v=' + contentVersionId)
                         .then(response => {
                             if (!response.ok) throw new Error("Network storage reference was not resolved properly.");
                             return response.json();

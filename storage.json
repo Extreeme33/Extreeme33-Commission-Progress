@@ -48,12 +48,6 @@
             "type": "warning"
         },
         {
-            "id": 1791647449128,
-            "content": "This text is <font color=\"#ff0000\" size=\"7\"><b>deadly</b></font>",
-            "date": "2026-10-10T15:50:49.128Z",
-            "type": "update"
-        },
-        {
             "id": 1791665417254,
             "content": "<font color=\"#e97aff\" size=\"5\"><b>Announcement</b></font><div>I am drawing right now</div>",
             "date": "2026-10-10T20:50:17.254Z",
