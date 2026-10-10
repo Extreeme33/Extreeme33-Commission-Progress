@@ -608,7 +608,9 @@
             if (!container) return;
 			
             const brandAvatar = document.getElementById('index-brand-avatar-view');
-            const activeAvatarEnv = window.globalAvatar || (typeof globalAvatar !== 'undefined' ? globalAvatar : "");
+            
+            // 🟩 DIUBAH: Mengunci prioritas utama mutlak pada window.globalAvatar agar tidak tertimpa oleh variabel lokal kosong saat online di GitHub Pages
+            const activeAvatarEnv = (window.globalAvatar && window.globalAvatar.trim() !== "") ? window.globalAvatar : (typeof globalAvatar !== 'undefined' ? globalAvatar : "");
             
             if (brandAvatar) {
                 if (activeAvatarEnv && activeAvatarEnv.trim() !== "") {
