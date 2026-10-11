@@ -325,6 +325,79 @@
             transform: translateX(-50%) scale(1);
         }
 
+        .rich-text-wrapper div, .rich-text-wrapper p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+        }
+		
+        .rich-text-wrapper font[size="5"] {
+            line-height: 1.1 !important;
+            display: inline-block;
+        }
+
+        .rich-text-wrapper font[size="6"],
+        .rich-text-wrapper font[size="7"] {
+            line-height: 0.95 !important; 
+            display: inline-block;
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+
+        .rich-text-wrapper a {
+            color: #38bdf8 !important;
+            text-decoration: underline;
+            transition: color 0.15s ease;
+            font-weight: 600;
+            position: relative; 
+            display: inline-block;
+        }
+
+        .rich-text-wrapper a:hover {
+            color: #7dd3fc !important;
+            text-decoration: underline;
+        }
+
+        .rich-text-wrapper a::before {
+            content: attr(data-custom-tip);
+            position: absolute;
+            bottom: calc(100% + 6px); 
+            left: 50%;
+            transform: translateX(-50%);
+            display: none; 
+            background: #1c1f30; 
+            color: #ffffff; 
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            border: 1px solid #3f445e; 
+            font-family: inherit;
+            pointer-events: none;
+            z-index: 100000;
+        }
+
+        .rich-text-wrapper a::after {
+            content: "";
+            position: absolute;
+            bottom: calc(100% + 0px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: none; 
+            border-width: 6px 6px 0 6px;
+            border-style: solid;
+            border-color: #1c1f30 transparent transparent transparent; 
+            pointer-events: none;
+            z-index: 100000;
+        }
+
+        .rich-text-wrapper a:hover::before,
+        .rich-text-wrapper a:hover::after {
+            display: block;
+        }
+
     </style>
 	<script src="neutralino.js"></script>
 </head>
@@ -855,11 +928,10 @@
                     }
 
                     feedHtml += `
+
                         <div style="background: var(--bg-card); border: 1px solid #232738; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: left;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-
                                 <div style="width: 38px; height: 38px; border-radius: 50%; ${feedAvatarInlineStyle} display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white; flex-shrink: 0;">${feedAvatarInitialText}</div>
-                                
                                 <div style="display: flex; flex-direction: column; align-items: flex-start;">
                                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                         <span style="font-size: 0.85rem; font-weight: bold; color: var(--text-main);">Extreeme33</span>
@@ -869,13 +941,25 @@
                                     <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">${localTimeText || 'Recent'}</span>
                                 </div>
                             </div>
-                            <div style="color: #e4e6eb; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; word-break: break-all;">${post.content}</div>
+
+                            <div class="rich-text-wrapper" style="color: #e4e6eb; font-size: 0.95rem; line-height: 1.2; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; text-align: left;">${post.content}</div>
                         </div>
                     `;
                 });
 
                 feedHtml += `</div>`;
                 container.innerHTML = feedHtml;
+
+                container.querySelectorAll('.rich-text-wrapper a').forEach(linkElement => {
+                    const currentHref = linkElement.getAttribute('href') || '';
+                    
+                    linkElement.setAttribute('data-custom-tip', currentHref);
+                    
+                    linkElement.removeAttribute('title'); 
+                    linkElement.addEventListener('mouseenter', function() {
+                        this.removeAttribute('title');
+                    });
+                });
                 return;
             }
 
