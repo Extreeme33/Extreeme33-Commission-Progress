@@ -398,6 +398,18 @@
             display: block;
         }
 
+        /* 🟩 BARU: Mengunci proporsi gambar lampiran di dalam status feed agar otomatis responsif dan melengkung rapi */
+        .rich-text-wrapper img {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 350px !important;
+            object-fit: contain !important;
+            border-radius: 6px !important;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            border: 1px solid #232738;
+        }
+
     </style>
 	<script src="neutralino.js"></script>
 </head>
