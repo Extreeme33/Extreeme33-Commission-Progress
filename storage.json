@@ -54,15 +54,15 @@
             "type": "announcement"
         },
         {
-            "id": 1791692610573,
-            "content": "test 4",
-            "date": "2026-10-11T04:23:30.573Z",
-            "type": "announcement"
-        },
-        {
             "id": 1791693440884,
             "content": "test 5",
             "date": "2026-10-11T04:37:20.884Z",
+            "type": "update"
+        },
+        {
+            "id": 1791693847980,
+            "content": "<font color=\"#a3b2ff\" size=\"5\"><b><i>new test 2</i></b></font>",
+            "date": "2026-10-11T04:44:07.980Z",
             "type": "update"
         }
     ],

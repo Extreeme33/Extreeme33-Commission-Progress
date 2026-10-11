@@ -430,7 +430,7 @@
 		
         async function syncDashboardPayload() {
             try {
-                // 1. JALUR OFFLINE LOKAL (Aplikasi Komputer Anda)
+                // 1. JALUR OFFLINE LOKAL (Aplikasi Komputer Desktop Anda)
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                     let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
                     const parsed = JSON.parse(rawData);
@@ -438,17 +438,27 @@
                     if (parsed && !Array.isArray(parsed) && parsed.komisiData) {
                         itemDatabase = parsed.komisiData || [];
                         adminStatusFeed = parsed.statusFeed || []; 
-                        globalAvatar = parsed.globalAvatar || "";
+						globalAvatar = parsed.globalAvatar || "";
                     } else {
                         itemDatabase = Array.isArray(parsed) ? parsed : [];
                         adminStatusFeed = [];
                     }
+
+                    // 🟩 BARU (SISTEM CHECKPOINT LOKAL): Mengambil riwayat klik permanen dari piringan harddisk lokal Anda
+                    try {
+                        let checkpointData = await Neutralino.storage.getData('equipdex_read_checkpoint');
+                        if (checkpointData) {
+                            localReadRegistry = JSON.parse(checkpointData);
+                            console.log("Local click checkpoints successfully resolved from native storage layer.");
+                        }
+                    } catch (checkpointErr) {
+                        console.log("First time launch registry checkpoint created.");
+                    }
                     
-                    // 🟩 KUNCI PERBAIKAN LOKAL: Hitung notifikasi HANYA setelah data asli dari komputer selesai dimuat 100%
                     calculateTabNotifications();
                     renderDashboard();
                 } else {
-                    // 2. JALUR ONLINE GITHUB PAGES (Browser Pengunjung Internet)
+                    // 2. JALUR ONLINE GITHUB PAGES (Browser Pengunjung Umum - Tetap Utuh Sempurna)
                     console.log("Neutralino context absent. Initializing remote fetch sequence for storage.json...");
                     
                     let contentVersionId = 1;
@@ -465,11 +475,9 @@
                             if (cloudPackage) {
                                 window.storageDatabase = cloudPackage.storageDatabase || [];
                                 window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
-                                window.globalAvatar = cloudPackage.globalAvatar || "";
+								window.globalAvatar = cloudPackage.globalAvatar || "";
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
-                                
-                                // 🟩 KUNCI PERBAIKAN ONLINE: Hitung notifikasi setelah data fetch mendarat utuh di browser publik
                                 calculateTabNotifications();
                                 renderDashboard();
                             }
@@ -491,6 +499,14 @@
 		let adminStatusFeed = [];
 		let globalAvatar = "";
         let activeDashboardTab = "progress";
+		
+        let localReadRegistry = {
+            last_read_time_progress: 0,
+            last_read_time_finished: 0,
+            last_read_time_catalog: 0,
+            last_read_time_shop: 0,
+            last_read_id_update: 0
+        };
 
         function getOutlineShadow(useStroke, color) {
             if (!useStroke) return 'none';
@@ -886,48 +902,51 @@
             }
         }
 
-        // 🟩 DIPERBAIKI: Mengubah kalkulasi notifikasi menggunakan sistem ID Konten Terbesar (100% Bebas Bug Zona Waktu Online)
         function calculateTabNotifications() {
             const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
             const activeItems = itemDatabase || [];
 
-            // A. Cari ID atau waktu pembaruan terbaru untuk masing-masing kategori tab data
             let newestProgressTime = 0;
             let newestFinishedTime = 0;
-            
-            // Khusus tab UPDATE: Kita lacak ID kiriman status yang paling besar (paling baru)
             let newestUpdateId = 0; 
 
-            // 1. Scan timestamp terbaru untuk data kartu komisi
             activeItems.forEach(item => {
                 let itemTime = 0;
                 if (item.lastUpdated) {
                     const parsedDate = new Date(item.lastUpdated);
                     itemTime = isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime();
                 }
-                
                 const status = item.status || "progress";
                 if (status === "progress" && itemTime > newestProgressTime) newestProgressTime = itemTime;
                 if (status === "finished" && itemTime > newestFinishedTime) newestFinishedTime = itemTime;
             });
 
-            // 2. Scan ID terbesar untuk postingan status feed Facebook Anda
             activeFeed.forEach(post => {
                 const postId = parseInt(post.id) || 0;
                 if (postId > newestUpdateId) newestUpdateId = postId;
             });
 
-            // 🟩 B. DIUBAH: Memaksa semua data dari localStorage dikonversi menjadi Angka Murni (parseInt) agar sinkron dengan database lokal Neutralino
-            const lastReadProgress = parseInt(localStorage.getItem('last_read_time_progress'), 10) || 0;
-            const lastReadFinished = parseInt(localStorage.getItem('last_read_time_finished'), 10) || 0;
-            const lastReadUpdateId = parseInt(localStorage.getItem('last_read_id_update'), 10) || 0; 
+            // 🟩 SISTEM SAKLAR HIBRIDA: Menentukan penarik memori klik berdasarkan ketersediaan framework Neutralino
+            let lastReadProgress = 0;
+            let lastReadFinished = 0;
+            let lastReadUpdateId = 0;
 
-            // 🟩 C. DIUBAH: Komparasi matematika sekarang berjalan 100% akurat karena membandingkan Angka vs Angka
+            if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
+                // Jalur Offline Lokal: Mengambil data dari pos pemeriksaan harddisk komputer Anda
+                lastReadProgress = parseInt(localReadRegistry.last_read_time_progress, 10) || 0;
+                lastReadFinished = parseInt(localReadRegistry.last_read_time_finished, 10) || 0;
+                lastReadUpdateId = parseInt(localReadRegistry.last_read_id_update, 10) || 0;
+            } else {
+                // Jalur Online Cloud: Tetap menggunakan localStorage standar browser pengunjung (100% Sempurna)
+                lastReadProgress = parseInt(localStorage.getItem('last_read_time_progress'), 10) || 0;
+                lastReadFinished = parseInt(localStorage.getItem('last_read_time_finished'), 10) || 0;
+                lastReadUpdateId = parseInt(localStorage.getItem('last_read_id_update'), 10) || 0;
+            }
+
             document.getElementById('dot-progress').style.display = (newestProgressTime > lastReadProgress) ? "block" : "none";
             document.getElementById('dot-finished').style.display = (newestFinishedTime > lastReadFinished) ? "block" : "none";
             document.getElementById('dot-update').style.display   = (newestUpdateId > lastReadUpdateId) ? "block" : "none";
             
-            // Tab Catalog & Shop tetap dikunci mati (none) karena datanya masih kosong murni saat ini
             document.getElementById('dot-catalog').style.display  = "none";
             document.getElementById('dot-shop').style.display     = "none";
         }
@@ -937,7 +956,7 @@
             const searchRow = document.getElementById('search-bar-row-wrapper'); 
 
             tabs.forEach(tab => {
-                tab.addEventListener('click', function() {
+                tab.addEventListener('click', async function() { // Menambahkan kata kunci async untuk pipa penulisan file
                     tabs.forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
 					
@@ -945,18 +964,35 @@
                     if (selectedText === "progress" || selectedText === "finished" || selectedText === "catalog" || selectedText === "shop" || selectedText === "update") {
                         activeDashboardTab = selectedText;
                         
-                        // 1. Catat waktu buka standar untuk tab Progress, Finished, Catalog, dan Shop
-                        localStorage.setItem('last_read_time_' + selectedText, Date.now());
-                        
-                        // 2. 🟩 KHUSUS TAB UPDATE: Catat ID terbesar saat ini ke localStorage PC agar titik hijaunya mati secara sah
-                        if (selectedText === "update") {
-                            const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
-                            let maxId = 0;
-                            activeFeed.forEach(post => {
-                                const pId = parseInt(post.id) || 0;
-                                if (pId > maxId) maxId = pId;
-                            });
-                            localStorage.setItem('last_read_id_update', maxId);
+                        const currentTimestampValue = Date.now();
+
+                        // 1. KONDISI OFFLINE LOKAL: Catat langsung ke berkas .storage komputer Anda agar awet selamanya
+                        if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
+                            if (selectedText === "update") {
+                                const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
+                                let maxId = 0;
+                                activeFeed.forEach(post => {
+                                    const pId = parseInt(post.id) || 0;
+                                    if (pId > maxId) maxId = pId;
+                                });
+                                localReadRegistry.last_read_id_update = maxId;
+                            } else {
+                                localReadRegistry['last_read_time_' + selectedText] = currentTimestampValue;
+                            }
+                            // Tulis dan kunci data objek checkpoint ke dalam harddisk lokal Anda
+                            await Neutralino.storage.setData('equipdex_read_checkpoint', JSON.stringify(localReadRegistry));
+                        } else {
+                            // 2. KONDISI ONLINE CLOUD: Tetap berjalan normal di localStorage browser pengunjung internet
+                            localStorage.setItem('last_read_time_' + selectedText, currentTimestampValue);
+                            if (selectedText === "update") {
+                                const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
+                                let maxId = 0;
+                                activeFeed.forEach(post => {
+                                    const pId = parseInt(post.id) || 0;
+                                    if (pId > maxId) maxId = pId;
+                                });
+                                localStorage.setItem('last_read_id_update', maxId);
+                            }
                         }
                         
                         const paginationRow = document.getElementById('dashboard-pagination-wrapper');
@@ -968,7 +1004,6 @@
                             if (paginationRow) paginationRow.style.display = "flex";
                         }
                         
-                        // Segarkan perhitungan titik notifikasi dan gambar ulang layar dasbor
                         calculateTabNotifications();
                         renderDashboard();
                     }
