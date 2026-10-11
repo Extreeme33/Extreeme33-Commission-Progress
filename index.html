@@ -430,7 +430,7 @@
 		
         async function syncDashboardPayload() {
             try {
-
+                // 1. JALUR OFFLINE LOKAL (Aplikasi Komputer Anda)
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                     let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
                     const parsed = JSON.parse(rawData);
@@ -438,25 +438,24 @@
                     if (parsed && !Array.isArray(parsed) && parsed.komisiData) {
                         itemDatabase = parsed.komisiData || [];
                         adminStatusFeed = parsed.statusFeed || []; 
-						globalAvatar = parsed.globalAvatar || "";
+                        globalAvatar = parsed.globalAvatar || "";
                     } else {
                         itemDatabase = Array.isArray(parsed) ? parsed : [];
                         adminStatusFeed = [];
                     }
+                    
+                    // 🟩 KUNCI PERBAIKAN LOKAL: Hitung notifikasi HANYA setelah data asli dari komputer selesai dimuat 100%
+                    calculateTabNotifications();
                     renderDashboard();
                 } else {
-
+                    // 2. JALUR ONLINE GITHUB PAGES (Browser Pengunjung Internet)
                     console.log("Neutralino context absent. Initializing remote fetch sequence for storage.json...");
                     
-                    // A. Buat penanda versi pintar berdasarkan jumlah data status feed admin yang tertanam di HTML Anda
-                    // Jika admin belum membuat status apa pun, berikan nilai default "1"
                     let contentVersionId = 1;
                     if (typeof adminStatusFeed !== 'undefined' && adminStatusFeed.length > 0) {
-                        // Mengambil ID postingan status paling terakhir sebagai penanda versi unik
                         contentVersionId = adminStatusFeed[adminStatusFeed.length - 1].id || adminStatusFeed.length;
                     }
 
-                    // 🟩 DIUBAH: Menggunakan ?v=VERSION_ID. Browser hanya download jika admin merilis data baru di cloud!
                     fetch('storage.json?v=' + contentVersionId)
                         .then(response => {
                             if (!response.ok) throw new Error("Network storage reference was not resolved properly.");
@@ -464,22 +463,26 @@
                         })
                         .then(cloudPackage => {
                             if (cloudPackage) {
-
                                 window.storageDatabase = cloudPackage.storageDatabase || [];
                                 window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
-								window.globalAvatar = cloudPackage.globalAvatar || "";
+                                window.globalAvatar = cloudPackage.globalAvatar || "";
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
+                                
+                                // 🟩 KUNCI PERBAIKAN ONLINE: Hitung notifikasi setelah data fetch mendarat utuh di browser publik
+                                calculateTabNotifications();
                                 renderDashboard();
                             }
                         })
                         .catch(fetchErr => {
                             console.error("Cloud storage pipeline exception captured:", fetchErr);
+                            calculateTabNotifications();
                             renderDashboard();
                         });
                 }
             } catch (err) {
                 console.warn("Global dashboard sync routine bypass active:", err);
+                calculateTabNotifications();
                 renderDashboard();
             }
         }
@@ -606,8 +609,7 @@
             }
         }
 		
-        function renderDashboard() {
-            calculateTabNotifications();		
+        function renderDashboard() {	
             const container = document.getElementById('work-grid');
             if (!container) return;
 			
@@ -915,21 +917,17 @@
                 if (postId > newestUpdateId) newestUpdateId = postId;
             });
 
-            // B. Ambil catatan riwayat baca terakhir kali milik user dari localStorage PC pengunjung
-            const lastReadProgress = localStorage.getItem('last_read_time_progress') || 0;
-            const lastReadFinished = localStorage.getItem('last_read_time_finished') || 0;
-            
-            // Mengambil ID terakhir yang pernah diklik user (jika belum ada, setel ke 0)
-            const lastReadUpdateId = localStorage.getItem('last_read_id_update') || 0; 
+            // 🟩 B. DIUBAH: Memaksa semua data dari localStorage dikonversi menjadi Angka Murni (parseInt) agar sinkron dengan database lokal Neutralino
+            const lastReadProgress = parseInt(localStorage.getItem('last_read_time_progress'), 10) || 0;
+            const lastReadFinished = parseInt(localStorage.getItem('last_read_time_finished'), 10) || 0;
+            const lastReadUpdateId = parseInt(localStorage.getItem('last_read_id_update'), 10) || 0; 
 
-            // C. Jalankan Eksekusi Saklar Titik Notifikasi Hijau
+            // 🟩 C. DIUBAH: Komparasi matematika sekarang berjalan 100% akurat karena membandingkan Angka vs Angka
             document.getElementById('dot-progress').style.display = (newestProgressTime > lastReadProgress) ? "block" : "none";
             document.getElementById('dot-finished').style.display = (newestFinishedTime > lastReadFinished) ? "block" : "none";
+            document.getElementById('dot-update').style.display   = (newestUpdateId > lastReadUpdateId) ? "block" : "none";
             
-            // 🟩 KUNCI UTAMA ONLINE: Titik UPDATE otomatis menyala jika ada ID status baru di cloud yang lebih besar dari PC user!
-            document.getElementById('dot-update').style.display   = (newestUpdateId > parseInt(lastReadUpdateId)) ? "block" : "none";
-            
-            // Tab Catalog & Shop dikunci tetap mati karena datanya masih kosong murni saat ini
+            // Tab Catalog & Shop tetap dikunci mati (none) karena datanya masih kosong murni saat ini
             document.getElementById('dot-catalog').style.display  = "none";
             document.getElementById('dot-shop').style.display     = "none";
         }
