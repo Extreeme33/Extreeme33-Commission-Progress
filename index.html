@@ -884,18 +884,19 @@
             }
         }
 
-        // 🟩 FUNGSI BARU: Mesin penghitung komparasi timestamp penentu aktifnya titik hijau notifikasi tab
+        // 🟩 DIPERBAIKI: Mengubah kalkulasi notifikasi menggunakan sistem ID Konten Terbesar (100% Bebas Bug Zona Waktu Online)
         function calculateTabNotifications() {
-            // Ambil data feed resmi yang siap dibaca dari lingkungan luring maupun daring
             const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
             const activeItems = itemDatabase || [];
 
-            // A. Cari waktu pembaruan terbaru untuk masing-masing tab kategori data
+            // A. Cari ID atau waktu pembaruan terbaru untuk masing-masing kategori tab data
             let newestProgressTime = 0;
             let newestFinishedTime = 0;
-            let newestUpdateTime = 0;
+            
+            // Khusus tab UPDATE: Kita lacak ID kiriman status yang paling besar (paling baru)
+            let newestUpdateId = 0; 
 
-            // 🟩 DIUBAH: Mengonversi format waktu lastUpdated ke milidetik secara kokoh dan anti-gagal untuk browser online
+            // 1. Scan timestamp terbaru untuk data kartu komisi
             activeItems.forEach(item => {
                 let itemTime = 0;
                 if (item.lastUpdated) {
@@ -908,25 +909,27 @@
                 if (status === "finished" && itemTime > newestFinishedTime) newestFinishedTime = itemTime;
             });
 
-            // 2. Scan timestamp terbaru untuk data postingan status Facebook
+            // 2. Scan ID terbesar untuk postingan status feed Facebook Anda
             activeFeed.forEach(post => {
-                const postTime = post.date ? new Date(post.date).getTime() : 0;
-                if (postTime > newestUpdateTime) newestUpdateTime = postTime;
+                const postId = parseInt(post.id) || 0;
+                if (postId > newestUpdateId) newestUpdateId = postId;
             });
 
-            // B. Ambil catatan waktu klik terakhir kali user dari localStorage browser
+            // B. Ambil catatan riwayat baca terakhir kali milik user dari localStorage PC pengunjung
             const lastReadProgress = localStorage.getItem('last_read_time_progress') || 0;
             const lastReadFinished = localStorage.getItem('last_read_time_finished') || 0;
-            const lastReadCatalog  = localStorage.getItem('last_read_time_catalog') || 0;
-            const lastReadShop     = localStorage.getItem('last_read_time_shop') || 0;
-            const lastReadUpdate   = localStorage.getItem('last_read_time_update') || 0;
+            
+            // Mengambil ID terakhir yang pernah diklik user (jika belum ada, setel ke 0)
+            const lastReadUpdateId = localStorage.getItem('last_read_id_update') || 0; 
 
-            // 🟩 DIUBAH: Logika diperbaiki secara total! Titik hijau akan tetap menyala di tab mana pun jika ada data baru buatan admin yang belum pernah diklik secara manual.
+            // C. Jalankan Eksekusi Saklar Titik Notifikasi Hijau
             document.getElementById('dot-progress').style.display = (newestProgressTime > lastReadProgress) ? "block" : "none";
             document.getElementById('dot-finished').style.display = (newestFinishedTime > lastReadFinished) ? "block" : "none";
-            document.getElementById('dot-update').style.display   = (newestUpdateTime > lastReadUpdate) ? "block" : "none";
             
-            // Tab Catalog & Shop tetap dikunci mati (none) karena datanya masih kosong murni saat ini
+            // 🟩 KUNCI UTAMA ONLINE: Titik UPDATE otomatis menyala jika ada ID status baru di cloud yang lebih besar dari PC user!
+            document.getElementById('dot-update').style.display   = (newestUpdateId > parseInt(lastReadUpdateId)) ? "block" : "none";
+            
+            // Tab Catalog & Shop dikunci tetap mati karena datanya masih kosong murni saat ini
             document.getElementById('dot-catalog').style.display  = "none";
             document.getElementById('dot-shop').style.display     = "none";
         }
@@ -944,8 +947,19 @@
                     if (selectedText === "progress" || selectedText === "finished" || selectedText === "catalog" || selectedText === "shop" || selectedText === "update") {
                         activeDashboardTab = selectedText;
                         
-                        // 🟩 DIUBAH: Catat waktu detik klik user saat ini ke dalam localStorage untuk menandai tab sudah dibaca
+                        // 1. Catat waktu buka standar untuk tab Progress, Finished, Catalog, dan Shop
                         localStorage.setItem('last_read_time_' + selectedText, Date.now());
+                        
+                        // 2. 🟩 KHUSUS TAB UPDATE: Catat ID terbesar saat ini ke localStorage PC agar titik hijaunya mati secara sah
+                        if (selectedText === "update") {
+                            const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
+                            let maxId = 0;
+                            activeFeed.forEach(post => {
+                                const pId = parseInt(post.id) || 0;
+                                if (pId > maxId) maxId = pId;
+                            });
+                            localStorage.setItem('last_read_id_update', maxId);
+                        }
                         
                         const paginationRow = document.getElementById('dashboard-pagination-wrapper');
                         if (selectedText === "update") {
@@ -956,7 +970,7 @@
                             if (paginationRow) paginationRow.style.display = "flex";
                         }
                         
-                        // Segarkan perhitungan notifikasi dan gambar ulang layar dasbor
+                        // Segarkan perhitungan titik notifikasi dan gambar ulang layar dasbor
                         calculateTabNotifications();
                         renderDashboard();
                     }
