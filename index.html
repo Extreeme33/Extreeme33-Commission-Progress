@@ -350,7 +350,7 @@
         <div style="width: 100%; border-top: 1px solid #2d3142; margin-bottom: 15px;"></div>
 
         <div style="display: flex; justify-content: center; width: 100%; padding-bottom: 15px;">
-            <!-- 🟩 DIUBAH: Mengonfigurasi tata letak elemen menu agar mendukung penyematan absolut titik notifikasi hijau -->
+
             <ul class="nav-filters" style="margin-bottom: 0; padding-bottom: 0; border: none; display: flex; gap: 30px; list-style: none; margin: 0; padding: 0;">
                 <li class="nav-item active" style="cursor: pointer; position: relative; display: inline-block;">Progress<span class="notif-dot" id="dot-progress" style="display: none; position: absolute; top: -2px; right: -8px; width: 6px; height: 6px; background-color: var(--accent-green, #10b981); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green, #10b981);"></span></li>
                 <li class="nav-item" style="cursor: pointer; position: relative; display: inline-block;">Finished<span class="notif-dot" id="dot-finished" style="display: none; position: absolute; top: -2px; right: -8px; width: 6px; height: 6px; background-color: var(--accent-green, #10b981); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green, #10b981);"></span></li>
@@ -430,7 +430,6 @@
 		
         async function syncDashboardPayload() {
             try {
-                // 1. JALUR OFFLINE LOKAL (Aplikasi Komputer Desktop Anda)
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                     let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
                     const parsed = JSON.parse(rawData);
@@ -444,7 +443,6 @@
                         adminStatusFeed = [];
                     }
 
-                    // 🟩 BARU (SISTEM CHECKPOINT LOKAL): Mengambil riwayat klik permanen dari piringan harddisk lokal Anda
                     try {
                         let checkpointData = await Neutralino.storage.getData('equipdex_read_checkpoint');
                         if (checkpointData) {
@@ -458,7 +456,7 @@
                     calculateTabNotifications();
                     renderDashboard();
                 } else {
-                    // 2. JALUR ONLINE GITHUB PAGES (Browser Pengunjung Umum - Tetap Utuh Sempurna)
+
                     console.log("Neutralino context absent. Initializing remote fetch sequence for storage.json...");
                     
                     let contentVersionId = 1;
@@ -926,18 +924,17 @@
                 if (postId > newestUpdateId) newestUpdateId = postId;
             });
 
-            // 🟩 SISTEM SAKLAR HIBRIDA: Menentukan penarik memori klik berdasarkan ketersediaan framework Neutralino
             let lastReadProgress = 0;
             let lastReadFinished = 0;
             let lastReadUpdateId = 0;
 
             if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
-                // Jalur Offline Lokal: Mengambil data dari pos pemeriksaan harddisk komputer Anda
+
                 lastReadProgress = parseInt(localReadRegistry.last_read_time_progress, 10) || 0;
                 lastReadFinished = parseInt(localReadRegistry.last_read_time_finished, 10) || 0;
                 lastReadUpdateId = parseInt(localReadRegistry.last_read_id_update, 10) || 0;
             } else {
-                // Jalur Online Cloud: Tetap menggunakan localStorage standar browser pengunjung (100% Sempurna)
+
                 lastReadProgress = parseInt(localStorage.getItem('last_read_time_progress'), 10) || 0;
                 lastReadFinished = parseInt(localStorage.getItem('last_read_time_finished'), 10) || 0;
                 lastReadUpdateId = parseInt(localStorage.getItem('last_read_id_update'), 10) || 0;
@@ -956,7 +953,7 @@
             const searchRow = document.getElementById('search-bar-row-wrapper'); 
 
             tabs.forEach(tab => {
-                tab.addEventListener('click', async function() { // Menambahkan kata kunci async untuk pipa penulisan file
+                tab.addEventListener('click', async function() { 
                     tabs.forEach(t => t.classList.remove('active'));
                     this.classList.add('active');
 					
@@ -966,7 +963,6 @@
                         
                         const currentTimestampValue = Date.now();
 
-                        // 1. KONDISI OFFLINE LOKAL: Catat langsung ke berkas .storage komputer Anda agar awet selamanya
                         if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                             if (selectedText === "update") {
                                 const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
@@ -979,10 +975,10 @@
                             } else {
                                 localReadRegistry['last_read_time_' + selectedText] = currentTimestampValue;
                             }
-                            // Tulis dan kunci data objek checkpoint ke dalam harddisk lokal Anda
+
                             await Neutralino.storage.setData('equipdex_read_checkpoint', JSON.stringify(localReadRegistry));
                         } else {
-                            // 2. KONDISI ONLINE CLOUD: Tetap berjalan normal di localStorage browser pengunjung internet
+
                             localStorage.setItem('last_read_time_' + selectedText, currentTimestampValue);
                             if (selectedText === "update") {
                                 const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
