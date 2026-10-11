@@ -895,9 +895,14 @@
             let newestFinishedTime = 0;
             let newestUpdateTime = 0;
 
-            // 1. Scan timestamp terbaru untuk data kartu komisi
+            // 🟩 DIUBAH: Mengonversi format waktu lastUpdated ke milidetik secara kokoh dan anti-gagal untuk browser online
             activeItems.forEach(item => {
-                const itemTime = item.lastUpdated ? new Date(item.lastUpdated).getTime() : 0;
+                let itemTime = 0;
+                if (item.lastUpdated) {
+                    const parsedDate = new Date(item.lastUpdated);
+                    itemTime = isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime();
+                }
+                
                 const status = item.status || "progress";
                 if (status === "progress" && itemTime > newestProgressTime) newestProgressTime = itemTime;
                 if (status === "finished" && itemTime > newestFinishedTime) newestFinishedTime = itemTime;

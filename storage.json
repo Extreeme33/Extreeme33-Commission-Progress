@@ -48,15 +48,9 @@
             "type": "update"
         },
         {
-            "id": 1791669029008,
-            "content": "testing number 10032",
-            "date": "2026-10-10T21:50:29.008Z",
-            "type": "announcement"
-        },
-        {
-            "id": 1791669271176,
-            "content": "testing 10033",
-            "date": "2026-10-10T21:54:31.176Z",
+            "id": 1791689836297,
+            "content": "new test",
+            "date": "2026-10-11T03:37:16.297Z",
             "type": "announcement"
         }
     ],
