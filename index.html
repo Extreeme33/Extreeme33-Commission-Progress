@@ -398,16 +398,109 @@
             display: block;
         }
 
-        /* 🟩 BARU: Mengunci proporsi gambar lampiran di dalam status feed agar otomatis responsif dan melengkung rapi */
-        .rich-text-wrapper img {
-            width: 100% !important;
-            height: auto !important;
-            max-height: 350px !important;
-            object-fit: contain !important;
-            border-radius: 6px !important;
-            margin-top: 8px;
+        /* ========================================================================= */
+        /* 🟩 SELESAI: Konstruksi Arsitektur Grid Asimetris Orisinal (Matrix System) */
+        /* ========================================================================= */
+        .feed-multi-images-grid {
+            display: grid;
+            gap: 4px; /* Jarak antar-foto sangat rapat dan rapi */
+            margin-top: 12px;
             margin-bottom: 4px;
+            width: 100%;
+            height: 380px; /* Batas tinggi kotak proporsional galeri */
+            border-radius: 8px;
+            overflow: hidden;
             border: 1px solid #232738;
+        }
+
+        /* 🟩 DIUBAH: Desain orisinal kartu kotak gambar penampung */
+        .matrix-thumb-box {
+            width: 100%;
+            height: 100%;
+            background-size: cover; /* Foto memotong rapat tanpa ada border hitam kosong! */
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            cursor: pointer;
+            background-color: #161925;
+            transition: opacity 0.15s ease;
+        }
+        .matrix-thumb-box:hover { opacity: 0.95; }
+
+        /* 🟩 DIUBAH: Lencana Hitam Transparan "+n" kustom orisinal */
+        .matrix-overlay-badge {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.55); /* Lapisan gelap estetik */
+            color: #ffffff;
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+            letter-spacing: 0.02em;
+        }
+
+        /* 🟩 DIUBAH: VARIANT MAPPING 1 SAMPAI 5 BERBASIS MATRIX CLASS */
+        .feed-multi-images-grid.gallery-matrix-1 { grid-template-columns: 1fr; }
+        
+        .feed-multi-images-grid.gallery-matrix-2 { grid-template-columns: 1fr 1fr; }
+
+        .feed-multi-images-grid.gallery-matrix-3 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 220px 160px;
+        }
+        .gallery-matrix-3 .matrix-thumb-box:nth-child(1) { grid-column: 1 / span 2; }
+
+        .feed-multi-images-grid.gallery-matrix-4 {
+            grid-template-columns: 3fr 1fr;
+            grid-template-rows: repeat(3, 1fr);
+        }
+        .gallery-matrix-4 .matrix-thumb-box:nth-child(1) { grid-row: 1 / span 3; }
+
+        .feed-multi-images-grid.gallery-matrix-5 {
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: 210px 166px;
+        }
+        .gallery-matrix-5 .matrix-thumb-box:nth-child(1) { grid-column: 1 / span 3; }
+        .gallery-matrix-5 .matrix-thumb-box:nth-child(2) { grid-column: 4 / span 3; }
+        .gallery-matrix-5 .matrix-thumb-box:nth-child(3) { grid-column: 1 / span 2; }
+        .gallery-matrix-5 .matrix-thumb-box:nth-child(4) { grid-column: 3 / span 2; }
+        .gallery-matrix-5 .matrix-thumb-box:nth-child(5) { grid-column: 5 / span 2; }
+
+        /* 🟩 DIPERBAIKI: Mengubah kontainer menjadi Flexbox Rata Tengah agar ruang kosong di kanan-kiri terbagi seimbang dan presisi */
+        .feed-multi-images-grid.gallery-matrix-1 {
+            display: flex !important;
+            justify-content: center; /* 🟩 KUNCI UTAMA: Memaksa foto tegak berdiri pas di tengah-tengah kotak status */
+            align-items: center;
+            height: auto !important; 
+            background: transparent;
+            border: none; 
+            border-radius: 0px;
+            overflow: visible;
+            width: 100%;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+
+        /* 🟩 DIPERBAIKI: Mengonfigurasi dimensi lebar fleksibel (lebar maksimal mengikuti rasio foto aslinya hingga 100%) */
+        .gallery-matrix-1 .matrix-thumb-box {
+            width: 100%;
+            max-width: 100%;
+            /* Trik aspek rasio otomatis: Jika foto potret, ia akan menyesuaikan tinggi maksimal secara proporsional */
+            height: 380px; /* Menyamakan tinggi estetik dengan model multi-grid Anda */
+            background-size: contain !important; /* Foto utuh 100% tanpa potongan tepi */
+            background-position: center center; /* Rata tengah di dalam sub-bingkai kartu */
+            background-repeat: no-repeat;
+            border-radius: 8px;
+            border: 1px solid #232738;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            background-color: #0b0d14; /* Background dasar gelap transparan yang elegan */
+            flex-shrink: 0;
         }
 
     </style>
@@ -939,8 +1032,66 @@
                         feedAvatarInitialText = "";
                     }
 
-                    feedHtml += `
+                    // 🟩 BARU: Mengubah tumpukan gambar lama dari database menjadi struktur grid Facebook yang rapi
+                    let finalRenderedContent = post.content;
+                    
+                    const tempDivParser = document.createElement('div');
+                    tempDivParser.innerHTML = post.content;
+                    
+                    // Deteksi keberadaan tag img baik format baru maupun lama
+                    const allImagesFound = Array.from(tempDivParser.querySelectorAll('.feed-attached-img-box img, img'));
+                    
+                    if (allImagesFound.length > 0) {
+                        // Bersihkan seluruh kontainer bungkusan gambar lama agar tidak menumpuk ganda
+                        const oldContainers = tempDivParser.querySelectorAll('.feed-multi-images-grid, .feed-attached-img-box, img');
+                        oldContainers.forEach(el => el.remove());
+                        
+                        // Kunci teks tulisan murni yang tersisa
+                        const pureTextHtml = tempDivParser.innerHTML.trim();
+                        const totalCount = allImagesFound.length;
+                        
+                        // Kunci batas maksimal visual 5 kotak grid
+                        const visibleCount = Math.min(totalCount, 5);
+                        let gridClassType = `gallery-matrix-${visibleCount}`;
+                        
+                        let gridHtml = `<div class="feed-multi-images-grid ${gridClassType}">`;
 
+                        // 1. PERULANGAN PERTAMA: Murni mencetak visual kotak grid luar saja (Maksimal terkunci hanya 5 Kotak)
+                        for (let i = 0; i < visibleCount; i++) {
+                            const imgSrc = allImagesFound[i].getAttribute('src');
+                            const isLastItem = (i === 4 && totalCount > 5);
+                            const remainingCount = totalCount - 5;
+
+                            let badgeHtmlOutput = '';
+                            if (isLastItem) {
+                                badgeHtmlOutput = '<div class="matrix-overlay-badge">+' + remainingCount + '</div>';
+                            }
+
+                            gridHtml += `
+                                <div class="matrix-thumb-box" style="background-image: url('${imgSrc}');" onclick="triggerLightboxFromGrid(this, '${imgSrc}')">
+                                    ${badgeHtmlOutput}
+                                </div>
+                            `;
+                        }
+                        
+                        gridHtml += `</div>`;
+
+                        // 2. 🟩 PERULANGAN KEDUA (PENGUNCI UTAMA SINKRONISASI): Mencetak SELURUH total tag gambar asli ke dalam wadah tersembunyi
+                        // Langkah ini menjamin seluruh 8 gambar terekam sempurna di dalam memori DOM halaman tanpa merusak visual layout luar!
+                        let hiddenImagesStorageHtml = `<div class="lightbox-hidden-vault-data" style="display: none !important;">`;
+                        
+                        // 🟩 DIPERBAIKI: Mengubah 'i < totalCount' menjadi 'j < totalCount' dan menghapus fungsi break penghambat data
+                        for (let j = 0; j < totalCount; j++) {
+                            const fullImgSrc = allImagesFound[j].getAttribute('src');
+                            hiddenImagesStorageHtml += `<img src="${fullImgSrc}" alt="Media Vault Assets">`;
+                        }
+                        hiddenImagesStorageHtml += `</div>`;
+
+                        // Satukan teks tulisan, kotak grid visual, dan wadah data gambar rahasia ke dalam satu konten tunggal
+                        finalRenderedContent = pureTextHtml + gridHtml + hiddenImagesStorageHtml;
+                    }
+
+                    feedHtml += `
                         <div style="background: var(--bg-card); border: 1px solid #232738; border-radius: 8px; padding: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: left;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                                 <div style="width: 38px; height: 38px; border-radius: 50%; ${feedAvatarInlineStyle} display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; color: white; flex-shrink: 0;">${feedAvatarInitialText}</div>
@@ -954,7 +1105,8 @@
                                 </div>
                             </div>
 
-                            <div class="rich-text-wrapper" style="color: #e4e6eb; font-size: 0.95rem; line-height: 1.2; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; text-align: left;">${post.content}</div>
+                            <!-- 🟩 DIUBAH: Menampilkan konten baru yang sudah terkonversi menjadi grid Facebook bebas batas hitam -->
+                            <div class="rich-text-wrapper" style="color: #e4e6eb; font-size: 0.95rem; line-height: 1.2; white-space: pre-wrap; overflow-wrap: anywhere; word-break: normal; text-align: left;">${finalRenderedContent}</div>
                         </div>
                     `;
                 });
@@ -962,6 +1114,7 @@
                 feedHtml += `</div>`;
                 container.innerHTML = feedHtml;
 
+                // Memetakan fungsi balon petunjuk tautan dark theme yang sudah ada
                 container.querySelectorAll('.rich-text-wrapper a').forEach(linkElement => {
                     const currentHref = linkElement.getAttribute('href') || '';
                     
@@ -972,6 +1125,9 @@
                         this.removeAttribute('title');
                     });
                 });
+
+                // Perintah querySelectorAll img lama di sini sudah dihapus bersih karena digantikan oleh fungsi triggerLightboxFromGrid yang super stabil
+
                 return;
             }
 
@@ -1190,6 +1346,291 @@
             console.log("Main Dashboard Console Mounted Safe From InnerHTML Resets.");
         })();
 		
+        // 🟩 VARIABEL REGISTRY LIGHTBOX GLOBAL
+        let lightboxImagesCollection = [];
+        let currentLightboxActiveIndex = 0;
+
+        function openGlobalLightbox(clickedImgElement) {
+            const parentCardBlock = clickedImgElement.closest('.rich-text-wrapper') || clickedImgElement.closest('[style*="background: var(--bg-card)"]');
+            
+            // 🟩 DIUBAH: Jika elemen dioper dari jembatan jembatan cerdas kita, langsung ambil koleksi dari brankas terdekat
+            const vaultContainer = parentCardBlock ? parentCardBlock.querySelector('.lightbox-hidden-vault-data') : null;
+            const imagesPool = vaultContainer ? vaultContainer.querySelectorAll('img') : (parentCardBlock ? parentCardBlock.querySelectorAll('img') : [clickedImgElement]);
+            
+            const allImagesInFeed = Array.from(imagesPool);
+            if (allImagesInFeed.length === 0) return;
+
+            lightboxImagesCollection = allImagesInFeed.map(img => img.src);
+            
+            const currentClickedSrc = clickedImgElement.getAttribute('src');
+            currentLightboxActiveIndex = lightboxImagesCollection.indexOf(currentClickedSrc);
+            if (currentLightboxActiveIndex === -1) currentLightboxActiveIndex = 0;
+
+            const modal = document.getElementById('global-lightbox-modal');
+            if (modal) modal.style.display = "flex";
+
+            syncLightboxActiveImageState();
+        }
+
+        // 🟩 DIPERBAIKI: Logika dirombak total menggunakan nomor indeks urutan kotak (100% Valid & Anti-Mogok!)
+        function triggerLightboxFromGrid(clickedGridBox, imgSrc) {
+            // 1. Temukan kontainer induk utama dari postingan status terkait
+            const parentBlock = clickedGridBox.closest('.rich-text-wrapper') || clickedGridBox.closest('[style*="background: var(--bg-card)"]');
+            if (!parentBlock) return;
+
+            // 2. Cari tahu kotak nomor berapa yang sedang diklik user di dalam grid (0 sampai 4)
+            const allBoxesInGrid = Array.from(clickedGridBox.parentNode.querySelectorAll('.matrix-thumb-box'));
+            const clickedIndex = allBoxesInGrid.indexOf(clickedGridBox);
+
+            // 3. Masuk ke dalam brankas rahasia tempat seluruh 8 data gambar asli disimpan
+            const vaultContainer = parentBlock.querySelector('.lightbox-hidden-vault-data');
+            if (vaultContainer) {
+                const allVaultImages = Array.from(vaultContainer.querySelectorAll('img'));
+                
+                // Ambil elemen gambar asli dari brankas berdasarkan nomor indeks klik yang cocok
+                const targetVaultImg = allVaultImages[clickedIndex];
+                if (targetVaultImg) {
+                    // Oper langsung ke mesin Lightbox utama untuk dibuka layar penuh
+                    openGlobalLightbox(targetVaultImg);
+                    return;
+                }
+            }
+
+            // Cadangan darurat: Jika brankas data tidak ditemukan, rakit elemen objek bayangan tiruan
+            const fallbackImgNode = document.createElement('img');
+            fallbackImgNode.setAttribute('src', imgSrc);
+            openGlobalLightbox(fallbackImgNode);
+        }
+
+        // 🟩 FUNGSI SINKRONISASI: Menyelaraskan gambar utama, status tombol navigasi, dan baris thumbnail aktif
+        function syncLightboxActiveImageState() {
+            resetLightboxZoomState();
+            const mainImgTarget = document.getElementById('lightbox-main-img-target');
+            const thumbsContainer = document.getElementById('lightbox-thumbnails-row-wrapper');
+            if (!mainImgTarget || !thumbsContainer) return;
+
+            // 1. Update gambar utama di layar
+            mainImgTarget.src = lightboxImagesCollection[currentLightboxActiveIndex];
+
+            // 2. Atur visibilitas tombol panah (Sembunyikan jika gambar hanya ada 1)
+            const prevBtn = document.getElementById('lightbox-prev-btn');
+            const nextBtn = document.getElementById('lightbox-next-btn');
+            if (prevBtn && nextBtn) {
+                const hasMultiple = lightboxImagesCollection.length > 1;
+                prevBtn.style.display = hasMultiple ? "flex" : "none";
+                nextBtn.style.display = hasMultiple ? "flex" : "none";
+            }
+
+            // 3. Bangun dan gambar ulang baris clickable small thumbnails di bawah
+            thumbsContainer.innerHTML = "";
+            
+            // Sembunyikan baris thumbnail jika gambar di postingan tersebut hanya ada 1
+            if (lightboxImagesCollection.length <= 1) {
+                thumbsContainer.style.display = "none";
+                return;
+            }
+            thumbsContainer.style.display = "flex";
+
+            lightboxImagesCollection.forEach((imgSrc, idx) => {
+                const isActive = idx === currentLightboxActiveIndex;
+                const activeClass = isActive ? "thumb-active" : "";
+                thumbsContainer.innerHTML += `
+                    <div class="lightbox-thumb-item ${activeClass}" 
+                         style="background-image: url('${imgSrc}');" 
+                         onclick="event.stopPropagation(); jumpToLightboxImageIndex(${idx})">
+                    </div>
+                `;
+            });
+        }
+
+        function handleLightboxOutsideClick(event) {
+            const mainImg = document.getElementById('lightbox-main-img-target');
+            const prevBtn = document.getElementById('lightbox-prev-btn');
+            const nextBtn = document.getElementById('lightbox-next-btn');
+            const thumbsRow = document.getElementById('lightbox-thumbnails-row-wrapper');
+
+            // Jika yang diklik adalah area kosong latar belakang (bukan gambar utama, bukan tombol panah, dan bukan barisan thumbnail bawah)
+            if (event.target !== mainImg && 
+                event.target !== prevBtn && 
+                event.target !== nextBtn && 
+                !thumbsRow.contains(event.target)) {
+                closeGlobalLightbox(); // Jalankan instruksi penutupan modal instan
+            }
+        }
+
+        // 🟩 DIUBAH: Menambahkan parameter event.stopPropagation() agar ketukan pada tombol panah tidak ikut memicu penutupan klik outside
+        function navigateLightboxImage(direction, event) {
+            if (event) event.stopPropagation(); // Amankan gelembung event gelembung browser
+            
+            if (lightboxImagesCollection.length <= 1) return;
+            currentLightboxActiveIndex += direction;
+            
+            if (currentLightboxActiveIndex < 0) {
+                currentLightboxActiveIndex = lightboxImagesCollection.length - 1;
+            } else if (currentLightboxActiveIndex >= lightboxImagesCollection.length) {
+                currentLightboxActiveIndex = 0;
+            }
+            syncLightboxActiveImageState();
+        }
+
+        // 🟩 FUNGSI KLIK THUMBNAIL: Melompat langsung ke gambar tertentu saat thumbnail bawah diklik
+        function jumpToLightboxImageIndex(targetIndex) {
+            if (targetIndex >= 0 && targetIndex < lightboxImagesCollection.length) {
+                currentLightboxActiveIndex = targetIndex;
+                syncLightboxActiveImageState();
+            }
+        }
+
+        // FUNGSI KELUAR: Menutup modal lightbox
+        function closeGlobalLightbox() {
+            const modal = document.getElementById('global-lightbox-modal');
+            if (modal) modal.style.display = "none";
+            lightboxImagesCollection = [];
+            currentLightboxActiveIndex = 0;
+			resetLightboxZoomState();
+        }
+
+        // 🟩 BONUS PRO-TRICK: Navigasi Keyboard (Panah Kiri/Kanan untuk ganti gambar, tombol Esc untuk keluar)
+        document.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('global-lightbox-modal');
+            if (!modal || modal.style.display === "none") return;
+
+            if (e.key === "ArrowLeft") navigateLightboxImage(-1);
+            else if (e.key === "ArrowRight") navigateLightboxImage(1);
+            else if (e.key === "Escape") closeGlobalLightbox();
+        });
+
+        // =========================================================================
+        // 🟩 FUNGSI BARU: Mesin Pengontrol Zoom Interaktif 150% & Pelacak Kursor Mouse
+        // =========================================================================
+        let isLightboxZoomedActive = false;
+
+        // Fungsi Saklar: Mengubah status gambar dari normal ke mekar 150% atau sebaliknya
+        function toggleLightboxZoomEngine(event) {
+            if (event) event.stopPropagation(); // Mencegah terpicunya penutupan klik luar modal
+            
+            const mainImg = document.getElementById('lightbox-main-img-target');
+            if (!mainImg) return;
+
+            isLightboxZoomedActive = !isLightboxZoomedActive;
+
+            if (isLightboxZoomedActive) {
+                mainImg.classList.add('zoomed-active');
+                // Langsung sesuaikan posisi zoom pertama kali berdasarkan letak klik mouse
+                handleLightboxZoomPan(event);
+            } else {
+                resetLightboxZoomState();
+            }
+        }
+
+        // Fungsi Pelacak (*Pan Engine*): Menggeser koordinat pusat sumbu gambar mengikuti arah mouse
+        function handleLightboxZoomPan(event) {
+            if (!isLightboxZoomedActive) return;
+
+            const mainImg = document.getElementById('lightbox-main-img-target');
+            if (!mainImg) return;
+
+            // Hitung dimensi ukuran dan letak koordinat kotak gambar di layar monitor
+            const rect = mainImg.getBoundingClientRect();
+            
+            // Hitung posisi kursor mouse relatif terhadap sudut kotak gambar dalam persen (0% hingga 100%)
+            const mouseXPercent = ((event.clientX - rect.left) / rect.width) * 100;
+            const mouseYPercent = ((event.clientY - rect.top) / rect.height) * 100;
+
+            // Geser jangkar pusat transformasi (transform-origin) mengikuti persentase kursor mouse
+            mainImg.style.transformOrigin = `${mouseXPercent}% ${mouseYPercent}%`;
+        }
+
+        // Fungsi Pemulih (*Reset*): Mengembalikan gambar ke setelan normal 100% rata tengah
+        function resetLightboxZoomState() {
+            const mainImg = document.getElementById('lightbox-main-img-target');
+            if (!mainImg) return;
+
+            isLightboxZoomedActive = false;
+            mainImg.classList.remove('zoomed-active');
+            mainImg.style.transformOrigin = "center center";
+        }
+
+        // 🟩 KALIBRASI PENGAMAN: Tambahkan pemicu fungsi resetLightboxZoomState() di dalam fungsi bawaan lama Anda
+        // agar saat user memencet tombol Next/Prev atau menutup galeri, setelan gambar otomatis kembali ke normal 100%:
+        // (Pastikan baris resetLightboxZoomState() ini dipanggil di baris paling bawah fungsi closeGlobalLightbox() 
+        // dan di baris teratas fungsi syncLightboxActiveImageState() Anda).
+
     </script>
+	
+    <!-- 🟩 DIPERBAIKI: Membuang total tag kontainer ganda bocor agar layout gambar, panah, dan thumbnail kembali presisi di tengah-tengah layar monitor -->
+    <div id="global-lightbox-modal" onclick="handleLightboxOutsideClick(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.98); z-index: 99999999; flex-direction: column; align-items: center; justify-content: center; user-select: none;">
+        
+        <!-- Hanya ada 1 kontainer penyeimbang tengah yang sah dan rapi -->
+        <div style="position: relative; width: 100%; max-width: 900px; height: calc(100% - 140px); display: flex; align-items: center; justify-content: center; padding: 0 60px; box-sizing: border-box;">
+            
+            <!-- Tombol Navigasi Kiri '<' Minimalis Orisinal -->
+            <button type="button" id="lightbox-prev-btn" onclick="navigateLightboxImage(-1, event)" style="position: absolute; left: 15px; background: rgba(30, 32, 44, 0.7); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); width: 42px; height: 42px; border-radius: 50%; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 100000000;" title="Previous Image">&lt;</button>
+            
+            <!-- Wadah Bingkai Pelindung Pembatas Over-scale Zoom 150% -->
+            <div id="lightbox-main-img-target-wrapper">
+                <img id="lightbox-main-img-target" src="" onclick="toggleLightboxZoomEngine(event)" onmousemove="handleLightboxZoomPan(event)" onmouseleave="resetLightboxZoomState()" alt="Full View">
+            </div>
+            
+            <!-- Tombol Navigasi Kanan '>' Minimalis Orisinal -->
+            <button type="button" id="lightbox-next-btn" onclick="navigateLightboxImage(1, event)" style="position: absolute; right: 15px; background: rgba(30, 32, 44, 0.7); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); width: 42px; height: 42px; border-radius: 50%; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 100000000;" title="Next Image">&gt;</button>
+        
+        </div>
+
+        <!-- Barisan Clickable Small Thumbnails Orisinal Matrix System Anda -->
+        <div id="lightbox-thumbnails-row-wrapper" style="width: 100%; max-width: 600px; height: 70px; display: flex; gap: 10px; align-items: center; justify-content: center; overflow-x: auto; padding: 5px 10px; box-sizing: border-box; margin-bottom: 20px;"></div>
+    </div>
+
+    <!-- Gaya Interaktif Sorotan Kursor Hover Lightbox -->
+    <style>
+        #global-lightbox-modal button:hover { background: #2563eb !important; color: white !important; border-color: #2563eb !important; }
+        .lightbox-thumb-item {
+            width: 48px; height: 48px; border-radius: 6px; background-size: cover; background-position: center;
+            border: 2px solid #232738; cursor: pointer; opacity: 0.4; transition: all 0.15s ease; flex-shrink: 0;
+        }
+        .lightbox-thumb-item:hover { opacity: 0.8; border-color: #3f445e; }
+        .lightbox-thumb-item.thumb-active { opacity: 1; border-color: #2563eb; transform: scale(1.05); box-shadow: 0 0 8px rgba(37,99,235,0.5); }
+        .feed-attached-img-box img { cursor: pointer; transition: opacity 0.2s; }
+        .feed-attached-img-box img:hover { opacity: 0.9; }
+
+        /* 🟩 DIPERBAIKI: Menambahkan width & height 100% agar bingkai pembungkus mengikuti luas area modal tanpa memotong aspek rasio foto asli */
+        #lightbox-main-img-target-wrapper {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            overflow: hidden; /* Mengunci potongan 150% agar tidak luber keluar dari area modal */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            background: transparent; /* Membuat latar belakang transparan agar menyatu dengan modal pekat */
+        }
+
+        /* 🟩 DIPERBAIKI: Mengunci penataan gambar agar saat normal 100% ia selalu fit utuh proporsional di tengah layar monitor */
+        #lightbox-main-img-target {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain; /* 🟩 KUNCI MUTLAK: Memaksa browser menampilkan seluruh porsi gambar secara utuh tanpa potongan */
+            cursor: zoom-in; 
+            transition: transform 0.2s ease-out;
+            transform-origin: center center;
+            will-change: transform;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            border: 1px solid #232738;
+            border-radius: 4px;
+        }
+
+        /* Kelas penanda aktif saat gambar mekar 150% (Tetap terjaga kokoh) */
+        #lightbox-main-img-target.zoomed-active {
+            cursor: zoom-out; 
+            transform: scale(1.5); 
+            border-radius: 0px; /* Menghilangkan radius melengkung tipis saat mekar agar pergeseran pan terlihat mulus */
+        }
+
+    </style>
+
 </body>
 </html>
