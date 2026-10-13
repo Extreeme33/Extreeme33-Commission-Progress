@@ -1579,12 +1579,16 @@
                 const isLink = isProperLinkFormat(rawValue);
                 const escapedValue = rawValue.replace(/'/g, "\\'");
                 
+                // 🌟 Force the title to lowercase first, then cleanly capitalize only the first letter globally
+                const cleanTitle = displayTitle.toLowerCase().trim();
+                const capitalizedTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+                
                 if (isLink) {
                     // Jika FORMAT LINK: Cetak tag <a> jangkar standar untuk buka tab baru (target="_blank") [Scenario 3]
                     return `
                         <a href="${rawValue.trim()}" target="_blank" class="social-tray-icon-item" 
                            style="background-image: url('${iconSource}');" 
-                           title="Visit our ${displayTitle.toUpperCase()} profile">
+                           title="Visit my ${capitalizedTitle} profile">
                         </a>
                     `;
                 } else {
@@ -1593,7 +1597,7 @@
                         <div class="social-tray-icon-item" 
                              style="background-image: url('${iconSource}'); position: relative;" 
                              onclick="executeSocialTextCopyAction(this, '${escapedValue}')"
-                             title="Click to copy ${displayTitle.toUpperCase()} username: ${rawValue}">
+                             title="Click to copy ${capitalizedTitle} username: ${rawValue}">
                         </div>
                     `;
                 }
@@ -1757,7 +1761,7 @@
         .header-controls-group {
             position: absolute;
             top: 12px;
-            right: 25px;
+            right: 0px; /* 🌟 Pushes the entire row flush right to match the dashboard edge line */
             display: flex;
             align-items: center;
             gap: 10px;
