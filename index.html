@@ -494,6 +494,37 @@
             flex-shrink: 0;
         }
 
+        /* ========================================================================= */
+        /* 🟩 BARU: Desain Global Floating Toast Layer (Anti-Berdempetan)           */
+        /* ========================================================================= */
+        #social-toast-floating-container {
+            position: fixed;
+            bottom: 30px; /* Muncul elegan dari arah bawah tengah layar monitor */
+            left: 50%;
+            transform: translateX(-50%) translateY(40px); /* Posisi awal tersembunyi di bawah */
+            background: #10b981; /* Warna hijau penanda sukses identik */
+            color: #000000;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+            z-index: 100000000; /* Prioritas tumpukan paling depan */
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Kelas pemicu animasi saat toast aktif menyala */
+        #social-toast-floating-container.toast-visible-active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
     </style>
 	<script src="neutralino.js"></script>
 </head>
@@ -501,20 +532,11 @@
     
 </head>
 <body>
-    
-    <!-- 🟩 TEMPELKAN DI SINI: Kontainer Nampan Ikon Sosial Media Kustom Anda -->
-    <!-- Atribut position: absolute akan mengunci posisinya tepat di pojok kanan atas layar monitor pengunjung -->
-    <div id="public-social-tray-wrapper" style="position: absolute; top: 12px; right: 25px; display: flex; gap: 10px; align-items: center; z-index: 10000;"></div>
 
     <!-- 🟩 BARU: Wadah Angkat Sinyal Notifikasi Mengambang Di Monitor Pengunjung -->
     <div id="social-toast-floating-container">
         <span>📋</span> <span id="social-toast-floating-text-target">Username copied to clipboard!</span>
     </div>
-
-    <!-- Elemen induk dasbor utama Anda tetap terjaga aman berada di bawahnya -->
-    <div id="dashboard" style="padding-top: 0px; margin-top: 12px; position: relative;">
-
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0px; padding-top: 0px; padding-bottom: 15px;">
 
     <div id="dashboard" style="padding-top: 0px; margin-top: 12px; position: relative;">
 
@@ -522,15 +544,17 @@
 
             <div style="display: flex; align-items: center; gap: 10px;">
 
-            <div class="brand-avatar-container">
-
-                <div id="index-brand-avatar-view" style="width: 50px; height: 50px; border-radius: 10px; background: #2563eb; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; color: white; border: 1px solid #2d3142; flex-shrink: 0;">EX</div>
-            </div>
+                <div class="brand-avatar-container">
+                    <div id="index-brand-avatar-view" style="width: 50px; height: 50px; border-radius: 10px; background: #2563eb; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; color: white; border: 1px solid #2d3142; flex-shrink: 0;">EX</div>
+                </div>
 
                 <div class="brand-title" style="font-size: 1.25rem; font-weight: bold; color: var(--text-main);">Extreeme33 Dashboard</div>
             </div>
             
-            
+            <div class="header-controls-group">
+                <div id="public-social-tray-wrapper"></div>
+                
+            </div>
         </div>
 
         <div style="width: 100%; border-top: 1px solid #2d3142; margin-bottom: 15px;"></div>
@@ -1729,35 +1753,26 @@
             border-color: #38bdf8;
             box-shadow: 0 6px 12px rgba(56, 189, 248, 0.25);
         }
-        /* ========================================================================= */
-        /* 🟩 BARU: Desain Global Floating Toast Layer (Anti-Berdempetan)           */
-        /* ========================================================================= */
-        #social-toast-floating-container {
-            position: fixed;
-            bottom: 30px; /* Muncul elegan dari arah bawah tengah layar monitor */
-            left: 50%;
-            transform: translateX(-50%) translateY(40px); /* Posisi awal tersembunyi di bawah */
-            background: #10b981; /* Warna hijau penanda sukses identik */
-            color: #000000;
-            padding: 10px 24px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
-            z-index: 100000000; /* Prioritas tumpukan paling depan */
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            letter-spacing: 0.02em;
+
+        .header-controls-group {
+            position: absolute;
+            top: 12px;
+            right: 25px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            z-index: 10000;
         }
 
-        /* Kelas pemicu animasi saat toast aktif menyala */
-        #social-toast-floating-container.toast-visible-active {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
+        #public-social-tray-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #admin-panel-btn {
+            margin: 0;
+            flex-shrink: 0;
         }
 
     </style>
