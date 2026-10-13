@@ -674,12 +674,11 @@
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
                                 
-                                if (cloudPackage.customSocialList || cloudPackage.socialMediaData) {
-                                    // Simpan objek cloudPackage ke window global agar ditangkap sempurna oleh renderPublicSocialMediaTray Anda
-                                    window.equipdex_parsed_payload = cloudPackage; 
+                                // 🟩 PICU SISI CLOUD: Merakit jejeran logo sosial media kustom saat data cloud mendarat di browser pengunjung
+                                if (cloudPackage.socialMediaData) {
                                     renderPublicSocialMediaTray(cloudPackage.socialMediaData);
                                 }
-								
+                                
                                 calculateTabNotifications();
                                 renderDashboard();
                             }
