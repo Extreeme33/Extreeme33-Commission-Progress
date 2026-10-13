@@ -499,6 +499,23 @@
 </head>
 <body>
     
+</head>
+<body>
+    
+    <!-- 🟩 TEMPELKAN DI SINI: Kontainer Nampan Ikon Sosial Media Kustom Anda -->
+    <!-- Atribut position: absolute akan mengunci posisinya tepat di pojok kanan atas layar monitor pengunjung -->
+    <div id="public-social-tray-wrapper" style="position: absolute; top: 12px; right: 25px; display: flex; gap: 10px; align-items: center; z-index: 10000;"></div>
+
+    <!-- 🟩 BARU: Wadah Angkat Sinyal Notifikasi Mengambang Di Monitor Pengunjung -->
+    <div id="social-toast-floating-container">
+        <span>📋</span> <span id="social-toast-floating-text-target">Username copied to clipboard!</span>
+    </div>
+
+    <!-- Elemen induk dasbor utama Anda tetap terjaga aman berada di bawahnya -->
+    <div id="dashboard" style="padding-top: 0px; margin-top: 12px; position: relative;">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0px; padding-top: 0px; padding-bottom: 15px;">
+
     <div id="dashboard" style="padding-top: 0px; margin-top: 12px; position: relative;">
 
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 0px; padding-top: 0px; padding-bottom: 15px;">
@@ -597,8 +614,12 @@
             }
         }
 		
+        // =========================================================================
+        // 🟩 STRUKTUR UTUH: Fungsi Sinkronisasi Data Dasbor Global (index.html)
+        // =========================================================================
         async function syncDashboardPayload() {
             try {
+                // 1. JALUR OFFLINE LOKAL (Aplikasi Komputer Desktop Anda via Neutralino)
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
                     let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
                     const parsed = JSON.parse(rawData);
@@ -606,12 +627,14 @@
                     if (parsed && !Array.isArray(parsed) && parsed.komisiData) {
                         itemDatabase = parsed.komisiData || [];
                         adminStatusFeed = parsed.statusFeed || []; 
-						globalAvatar = parsed.globalAvatar || "";
+                        globalAvatar = parsed.globalAvatar || "";
+						window.equipdex_parsed_payload = parsed;
                     } else {
                         itemDatabase = Array.isArray(parsed) ? parsed : [];
                         adminStatusFeed = [];
                     }
 
+                    // Mengambil riwayat klik permanen dari piringan harddisk lokal Anda
                     try {
                         let checkpointData = await Neutralino.storage.getData('equipdex_read_checkpoint');
                         if (checkpointData) {
@@ -622,10 +645,15 @@
                         console.log("First time launch registry checkpoint created.");
                     }
                     
+                    // 🟩 PICU SISI LOKAL: Merakit jejeran logo sosial media kustom di aplikasi desktop luring Anda
+                    if (parsed && parsed.socialMediaData) {
+                        renderPublicSocialMediaTray(parsed.socialMediaData);
+                    }
+                    
                     calculateTabNotifications();
                     renderDashboard();
                 } else {
-
+                    // 2. JALUR ONLINE GITHUB PAGES (Browser Pengunjung Umum - 100% Sempurna)
                     console.log("Neutralino context absent. Initializing remote fetch sequence for storage.json...");
                     
                     let contentVersionId = 1;
@@ -642,9 +670,15 @@
                             if (cloudPackage) {
                                 window.storageDatabase = cloudPackage.storageDatabase || [];
                                 window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
-								window.globalAvatar = cloudPackage.globalAvatar || "";
+                                window.globalAvatar = cloudPackage.globalAvatar || "";
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
+                                
+                                // 🟩 PICU SISI CLOUD: Merakit jejeran logo sosial media kustom saat data cloud mendarat di browser pengunjung
+                                if (cloudPackage.socialMediaData) {
+                                    renderPublicSocialMediaTray(cloudPackage.socialMediaData);
+                                }
+                                
                                 calculateTabNotifications();
                                 renderDashboard();
                             }
@@ -1501,6 +1535,114 @@
             mainImg.style.transformOrigin = "center center";
         }
 
+        // =========================================================================
+        // 🟩 MULTI-ENGINE DRIVER: Deteksi Otomatis Buka Link ATAU Copy Username (index.html)
+        // =========================================================================
+        function renderPublicSocialMediaTray(socialDataPacket) {
+            const trayContainer = document.getElementById('public-social-tray-wrapper');
+            if (!trayContainer) return;
+            trayContainer.innerHTML = ""; 
+
+            // Fungsi Bantuan: Menguji paksa apakah teks berawalan http/https atau tulisan biasa
+            function isProperLinkFormat(textString) {
+                if (!textString) return false;
+                const trimmed = textString.trim();
+                return trimmed.startsWith('http://') || trimmed.startsWith('https://');
+            }
+
+            // Fungsi Pembentuk Element: Membuat boks tombol pintar yang adaptif
+            function generateSocialItemHtml(displayTitle, rawValue, iconSource) {
+                const isLink = isProperLinkFormat(rawValue);
+                const escapedValue = rawValue.replace(/'/g, "\\'");
+                
+                if (isLink) {
+                    // Jika FORMAT LINK: Cetak tag <a> jangkar standar untuk buka tab baru (target="_blank") [Scenario 3]
+                    return `
+                        <a href="${rawValue.trim()}" target="_blank" class="social-tray-icon-item" 
+                           style="background-image: url('${iconSource}');" 
+                           title="Visit our ${displayTitle.toUpperCase()} profile">
+                        </a>
+                    `;
+                } else {
+                    // Jika FORMAT USERNAME/TEKS: Cetak boks interaktif yang memicu fungsi salin papan klip saat diklik
+                    return `
+                        <div class="social-tray-icon-item" 
+                             style="background-image: url('${iconSource}'); position: relative;" 
+                             onclick="executeSocialTextCopyAction(this, '${escapedValue}')"
+                             title="Click to copy ${displayTitle.toUpperCase()} username: ${rawValue}">
+                        </div>
+                    `;
+                }
+            }
+
+            // --- PART 1: Progres Cetak 3 Platform Utama Permanen ---
+            if (socialDataPacket) {
+                const fixedPlatforms = ['discord', 'x', 'pixiv'];
+                fixedPlatforms.forEach(key => {
+                    const item = socialDataPacket[key];
+                    if (item && item.url && item.url.trim() !== "") {
+                        const iconSource = (item.icon && item.icon.trim() !== "") ? item.icon : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                        trayContainer.innerHTML += generateSocialItemHtml(key, item.url, iconSource);
+                    }
+                });
+            }
+
+            // --- PART 2: Progres Cetak Jejeran List Kustom Dinamis Sektor Bawah ---
+            let finalCustomList = [];
+            if (window.equipdex_parsed_payload && window.equipdex_parsed_payload.customSocialList) {
+                finalCustomList = window.equipdex_parsed_payload.customSocialList;
+            } else if (typeof cloudPackage !== 'undefined' && cloudPackage && cloudPackage.customSocialList) {
+                finalCustomList = cloudPackage.customSocialList;
+            } else if (typeof parsed !== 'undefined' && parsed && parsed.customSocialList) {
+                finalCustomList = parsed.customSocialList;
+            }
+
+            if (finalCustomList && Array.isArray(finalCustomList)) {
+                finalCustomList.forEach(item => {
+                    if (item && item.url && item.url.trim() !== "") {
+                        const displayTitle = item.platform && item.platform.trim() !== "" ? item.platform : "Social Link";
+                        const iconSource = (item.icon && item.icon.trim() !== "") ? item.icon : "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                        trayContainer.innerHTML += generateSocialItemHtml(displayTitle, item.url, iconSource);
+                    }
+                });
+            }
+        }
+
+        // =========================================================================
+        // 🟩 FUNGSI BARU: Eksekutor Salin Teks ke Clipboard & Animasi Balon "Copied!"
+        // =========================================================================
+        // =========================================================================
+        // 🟩 DIPERBAIKI: Mesin Penggerak Toast Mengambang Bebas Hambatan Visual
+        // =========================================================================
+        let socialToastTimeoutTracker = null;
+
+        function executeSocialTextCopyAction(clickedElement, textToCopy) {
+            // Jalankan perintah salin teks ke sistem clipboard papan klip komputer klien
+            navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+                const toastBox = document.getElementById('social-toast-floating-container');
+                const toastText = document.getElementById('social-toast-floating-text-target');
+                
+                if (!toastBox || !toastText) return;
+
+                // Tulis kalimat keterangan dinamis penunjuk sukses
+                toastText.textContent = `Copied to clipboard: "${textToCopy.trim()}"`;
+
+                // Bersihkan antrean sisa timeout tracker lama jika ada aksi klik beruntun
+                clearTimeout(socialToastTimeoutTracker);
+
+                // Nyalakan visual animasi toast meluncur naik ke tengah layar monitor
+                toastBox.classList.add('toast-visible-active');
+
+                // Padamkan dan sembunyikan kembali toast secara otomatis setelah 2.5 detik
+                socialToastTimeoutTracker = setTimeout(() => {
+                    toastBox.classList.remove('toast-visible-active');
+                }, 2500);
+                
+            }).catch(err => {
+                console.error("Gagal menyalin teks ke clipboard:", err);
+            });
+        }
+
     </script>
 	
     <div id="global-lightbox-modal" onclick="handleLightboxOutsideClick(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.98); z-index: 99999999; flex-direction: column; align-items: center; justify-content: center; user-select: none;">
@@ -1563,6 +1705,59 @@
             cursor: zoom-out; 
             transform: scale(1.5); 
             border-radius: 0px; 
+        }
+
+        /* 🟩 BARU: Desain Orisinal Kotak Ikon Sosial Media Pengunjung */
+        .social-tray-icon-item {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            border: 1px solid #232738;
+            background-color: #161925;
+            cursor: pointer;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-block;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Efek Hover: Ikon sedikit terangkat naik dan bersinar saat didekati mouse */
+        .social-tray-icon-item:hover {
+            transform: translateY(-2px);
+            border-color: #38bdf8;
+            box-shadow: 0 6px 12px rgba(56, 189, 248, 0.25);
+        }
+        /* ========================================================================= */
+        /* 🟩 BARU: Desain Global Floating Toast Layer (Anti-Berdempetan)           */
+        /* ========================================================================= */
+        #social-toast-floating-container {
+            position: fixed;
+            bottom: 30px; /* Muncul elegan dari arah bawah tengah layar monitor */
+            left: 50%;
+            transform: translateX(-50%) translateY(40px); /* Posisi awal tersembunyi di bawah */
+            background: #10b981; /* Warna hijau penanda sukses identik */
+            color: #000000;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+            z-index: 100000000; /* Prioritas tumpukan paling depan */
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Kelas pemicu animasi saat toast aktif menyala */
+        #social-toast-floating-container.toast-visible-active {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
 
     </style>
