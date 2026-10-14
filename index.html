@@ -1976,6 +1976,21 @@
             flex-shrink: 0;
         }
 
+        div[style*="position: relative; display: block;"] button[onclick^="shiftCatalogSectionSlide"] {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        div[style*="position: relative; display: block;"] button[onclick^="shiftCatalogSectionSlide"]:hover {
+            background: rgba(16, 185, 129, 0.95) !important; 
+            color: #000000 !important;                        
+            border-color: #34d399 !important;                  
+            filter: brightness(1.2);                           
+            
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), 
+                        0 0 4px rgba(16, 185, 129, 0.4) !important;
+            
+            transform: translateY(-50%) scale(1.08) !important; 
+        }
     </style>
 
 </body>
