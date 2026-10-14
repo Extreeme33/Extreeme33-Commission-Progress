@@ -94,12 +94,10 @@
             width: 100%;
             overflow: visible !important;
             
-            /* 🌟 Forces your public workspace grid to smoothly morph and slide cards over 0.25 seconds */
             transition: grid-template-columns 0.25s cubic-bezier(0.4, 0, 0.2, 1), gap 0.25s ease, opacity 0.15s ease;
             will-change: grid-template-columns, gap;
         }
 
-        /* 🌟 DEDICATED CATALOG GRID ENGINE FOR PUBLIC VIEW (INDEX.HTML) */
         .catalog-multi-images-grid {
             display: grid;
             gap: 4px !important;
@@ -111,7 +109,6 @@
             height: auto !important;
         }
 
-        /* Memaksa layout matriks baris bawaan feed agar menggunakan persentase fleksibel di dalam aspek kotak */
         .catalog-multi-images-grid .matrix-thumb-box { height: 100% !important; }
         .catalog-multi-images-grid.gallery-matrix-1 .matrix-thumb-box { height: 100% !important; }
         .catalog-multi-images-grid.gallery-matrix-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 100% !important; }
@@ -119,7 +116,6 @@
         .catalog-multi-images-grid.gallery-matrix-4 { grid-template-columns: 3fr 1fr !important; grid-template-rows: repeat(3, 1fr) !important; }
         .catalog-multi-images-grid.gallery-matrix-5 { grid-template-columns: repeat(6, 1fr) !important; grid-template-rows: 56% 44% !important; }
         
-        /* 🌟 PERBAIKAN MUTLAK: Netralkan total paksaan tinggi piksel statis (120px/128px) pada anak elemen matrix-4 bawaan feed */
         .catalog-multi-images-grid.gallery-matrix-4 > div,
         .catalog-multi-images-grid.gallery-matrix-4 > div:nth-child(2),
         .catalog-multi-images-grid.gallery-matrix-4 > div:nth-child(3),
@@ -914,17 +910,14 @@
                 if (itemStatus !== activeDashboardTab) return false;
                 
                 if (searchQuery !== "") {
-                    // Extract strings from target database keys safely
                     const itemTitle = (item.title || "").toLowerCase();
                     const itemSub1 = (item.subStatus || "").toLowerCase();
                     const itemSub2 = (item.subStatus2 || "").toLowerCase();
                     
-                    // Check if query string matches title OR any of the active substatus text tags
                     const matchesTitle = itemTitle.includes(searchQuery);
                     const matchesSub1 = itemSub1.includes(searchQuery);
                     const matchesSub2 = itemSub2.includes(searchQuery);
                     
-                    // 🌟 NEW CONFIGURATION: If user types "work in progress", map it directly to match "wip" tags
                     const isSearchingWorkInProgress = "work in progress".includes(searchQuery) || searchQuery.includes("work in progress");
                     const matchesWipPhrase = isSearchingWorkInProgress && itemSub1 === "wip";
                     
@@ -1207,9 +1200,7 @@
                 return;
             }
 
-            // 🌟 ROUTING UTAMA TAB KATALOG PUBLIC VIEW
             if (activeDashboardTab === "catalog") {
-                // Tarik data dari payload global paket sync data
                 const globalCatalogDatabase = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData : [];
                 
                 if (!globalCatalogDatabase || globalCatalogDatabase.length === 0) {
@@ -1217,7 +1208,6 @@
                     return;
                 }
 
-                // Paksa struktur kolom grid agar membagi rata menjadi 5 elemen per baris secara otomatis
                 container.style.gridTemplateColumns = "repeat(5, minmax(0, 1fr))";
                 container.style.gap = "15px";
 
@@ -1233,23 +1223,20 @@
                         availableSections.push({ key: 'default', label: 'Sample' });
                     }
 
-                    // Fungsi pembentuk elemen mozaik kolase gambar mini internal
                     function compileSectionalGridHtml(imagesArray) {
                         if (!imagesArray || imagesArray.length === 0) return '';
                         const totalCount = imagesArray.length;
                         const visibleCount = Math.min(totalCount, 5);
                         
-                        // 🌟 KEMBALIKAN: Gunakan kembali nama kelas asli bawaan CSS Anda agar layout 4 gambar (dan lainnya) kembali normal 100%
                         let gridClassType = "gallery-matrix-" + visibleCount;
 
                         const encodedPhotoArray = btoa(JSON.stringify(imagesArray));
 
-                        // Atur pembatasan baris kontainer luar secara inline
                         let rowOverrideStyle = "";
                         if (visibleCount === 4) {
                             rowOverrideStyle = " grid-template-columns: 3fr 1fr !important; grid-template-rows: repeat(3, 1fr) !important;";
                         } else if (visibleCount === 2) {
-                            // 🌟 PERBAIKAN: Paksa kontainer utama membagi rata menjadi 2 kolom kiri-kanan (1fr 1fr) dengan 1 baris tunggal (1fr)
+
                             rowOverrideStyle = " grid-template-columns: 1fr 1fr !important; grid-template-rows: 1fr !important;";
                         }
 
@@ -1260,7 +1247,6 @@
                             const remainingCount = totalCount - 5;
                             let badgeHtmlOutput = isLastItem ? '<div class="matrix-overlay-badge" style="font-size: 1.5rem; font-weight: bold;">+' + remainingCount + '</div>' : '';
 
-                            // 🌟 PERBAIKAN UTAMA: Kembalikan tinggi penuh 'height: 100% !important' dan bebaskan kolom elemen anak agar mengalir normal ke samping kiri-kanan secara simetris!
                             let childStyle = "height: 100% !important;";
                             if (visibleCount === 4) {
                                 childStyle = "height: auto !important; min-height: 0 !important; max-height: 100% !important;";
@@ -1300,7 +1286,6 @@
                         <div class="card-wrapper" id="card-catalog-${item.id}" data-sections="${sectionsJsonDataAttr}" data-grids="${gridsJsonDataAttr}" data-active-idx="0" style="width: 100%; min-width: 0; height: auto; margin-top: 15px; margin-bottom: 5px;">
                             <div class="card" style="background-color: var(--bg-card); height: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; position: relative;">
                                 
-                                <!-- 🌟 Unified Top Row: Centers the sample text while keeping the row layout compact -->
                                 <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative; min-height: 20px; margin-top: 2px;">
                                     <span id="catalog-label-indicator-${item.id}" style="font-size: 0.72rem; color: #ffffff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed #2d3142; padding-bottom: 2px; display: inline-block;">${initialLabel}</span>
                                 </div>
@@ -1308,7 +1293,6 @@
                                 <div style="width: 100%; position: relative; display: block; margin-top: 4px;">
                                     <button type="button" onclick="shiftCatalogSectionSlide('${item.id}', -1)" style="position: absolute; left: -13px; top: 50%; transform: translateY(-50%); background: rgba(22, 25, 37, 0.85); border: 1px solid #2d3142; color: #10b981; font-weight: bold; cursor: pointer; width: 26px; height: 32px; border-radius: 4px; display: ${availableSections.length <= 1 ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 0.75rem; user-select: none; z-index: 100;">◀</button>
                                     
-                                    <!-- 🌟 PERBAIKAN SELEKTOR UTAMA: Diubah menjadi 'catalog-multi-images-grid' untuk memutus paksaan tinggi 380px bawaan feed timeline! -->
                                     <div id="catalog-display-canvas-${item.id}" class="catalog-multi-images-grid rich-text-wrapper" style="width: 100%; aspect-ratio: 1 / 1 !important; height: auto; margin: 0; position: relative;">
                                         ${initialHtmlView}
                                     </div>
@@ -1327,12 +1311,10 @@
                 });
                 return;
             } else {
-                // Kembalikan ke format default aslinya untuk tab progress/finished biasa
                 container.style.gridTemplateColumns = "repeat(3, 1fr)";
                 container.style.gap = "25px 20px";
             }
 
-            // 🌟 Perbaikan Validasi Peringatan Kosong Jika Tidak Ada Item Yang Lolos Filter
             if (visibleCardsCount === 0) {
                 if (searchQuery !== "") {
                     container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">No client named "<strong style="color: white;">${searchQuery}</strong>" found in this tab.</div>`;
@@ -1566,7 +1548,6 @@
         }
 
         function triggerLightboxFromGrid(clickedGridBox, imgSrc) {
-            // 🌟 Ditambahkan deteksi kontainer katalog agar pelacakan data vault gambar tidak patah
             const parentBlock = clickedGridBox.closest('.rich-text-wrapper') || 
                                 clickedGridBox.closest('[id^="catalog-display-canvas-"]') || 
                                 clickedGridBox.closest('[style*="background: var(--bg-card)"]');
@@ -1865,24 +1846,19 @@
 
         function launchDirectCatalogLightbox(targetPhotoIdx, base64EncodedImageArray) {
             try {
-                // Decode array gambar dari cache string Base64 secara instan
                 const activeImagesPool = JSON.parse(atob(base64EncodedImageArray));
                 if (!activeImagesPool || activeImagesPool.length === 0) return;
 
-                // Suntikkan data gambar langsung ke variabel array lightbox bawaan Anda
                 lightboxImagesCollection = activeImagesPool;
                 currentLightboxActiveIndex = targetPhotoIdx;
 
-                // Tampilkan modal pop-up hitam fullscreen bawaan Anda
                 const modalElement = document.getElementById('global-lightbox-modal');
                 if (modalElement) {
                     modalElement.style.display = "flex";
                 }
 
-                // Jalankan fungsi sinkronisasi visual asli milik Anda
                 syncLightboxActiveImageState();
                 
-                // Pastikan gambar target mekar penuh mengikuti rasio layar
                 const mainImgTarget = document.getElementById('lightbox-main-img-target');
                 if (mainImgTarget) {
                     mainImgTarget.style.height = "auto";
