@@ -1301,9 +1301,12 @@
                                 </div>
 
                                 <div style="font-size: 0.9rem; color: #ffffff; line-height: 1.4; text-align: center; font-weight: bold; margin-top: 2px; width: 100%;">${item.desc}</div>
-                                <div style="display: flex; justify-content: center; align-items: center; border-top: 1px solid #2d3142; padding-top: 10px; margin-top: 4px; gap: 6px; width: 100%;">
-                                    <span style="font-size: 0.75rem; color: var(--text-muted);">STARTING AT</span>
-                                    <strong style="color: var(--accent-green); font-size: 1.1rem;">$${item.price}</strong>
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2d3142; padding-top: 10px; margin-top: 4px; width: 100%;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-size: 0.75rem; color: var(--text-muted);">STARTING AT</span>
+                                        <strong style="color: var(--accent-green); font-size: 1.1rem;">$${item.price}</strong>
+                                    </div>
+                                    <button type="button" onclick="openOrderSummaryModal('${item.id}')" style="background: var(--accent-green); color: black; border: none; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Order</button>
                                 </div>
                             </div>
                         </div>
@@ -1870,6 +1873,239 @@
             }
         }
 
+        let currentActiveOrderCatalogItem = null;
+
+        function openOrderSummaryModal(catalogId) {
+            const globalCatalogDatabase = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData : [];
+            const targetItem = globalCatalogDatabase.find(item => item.id === catalogId);
+            if (!targetItem) return;
+
+            currentActiveOrderCatalogItem = targetItem;
+            document.getElementById('order-base-price-display').textContent = `$${targetItem.price}`;
+            
+            const container = document.getElementById('order-addons-container');
+            container.innerHTML = "";
+
+            const tiers = targetItem.priceTiers || [];
+            if (tiers.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: #8b949e; padding: 10px; font-size: 0.8rem;">No optional addons available for this item.</div>`;
+            } else {
+                tiers.forEach((tier, index) => {
+                    let priceTagHtml = `<span style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;">+$${tier.price}</span>`;
+                    
+                    // Jika data tier tersebut murni berisi potongan diskon (%)
+                    if (tier.price === 0 && tier.discount > 0) {
+                        priceTagHtml = `<span style="font-size: 0.85rem; color: #ef4444; font-weight: 600;">-${tier.discount}% OFF</span>`;
+                    }
+                    // Jika data tier tersebut merupakan harga addon yang memiliki diskon bawaan individual
+                    else if (tier.price > 0 && tier.discount > 0) {
+                        const cellDiscounted = Math.round(tier.price * (1 - (tier.discount / 100)));
+                        priceTagHtml = `
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: #ef4444; text-decoration: line-through; opacity: 0.6;">+$${tier.price}</span>
+                                <span style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;">+$${cellDiscounted}</span>
+                            </div>
+                        `;
+                    }
+
+                    // Jika fitur kuantitas diaktifkan di admin, siapkan elemen HTML input angka interaktif
+                    let qtyInputHtml = "";
+                    if (tier.allowQty) {
+                        qtyInputHtml = `
+                            <input type="number" class="order-addon-qty-input" value="1" min="1" max="99" onchange="calculateLiveOrderTotal()" oninput="calculateLiveOrderTotal()" style="width: 50px; background: #161925; border: 1px solid #2d3142; color: white; border-radius: 4px; padding: 2px 4px; font-size: 0.8rem; text-align: center; margin-left: 8px; outline: none;" onclick="event.stopPropagation();">
+                        `;
+                    }
+
+                    container.innerHTML += `
+                        <label style="display: flex; justify-content: space-between; align-items: center; background: #111420; border: 1px solid #232738; padding: 10px 12px; border-radius: 6px; cursor: pointer; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" class="order-addon-checkbox" data-price="${tier.price}" data-discount="${tier.discount || 0}" data-has-qty="${tier.allowQty ? 'true' : 'false'}" data-tier-name="${tier.name}" onchange="calculateLiveOrderTotal()" style="accent-color: var(--accent-green); cursor: pointer; width: 16px; height: 16px;">
+                                <div style="display: flex; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: white;">${tier.name}</span>
+                                    ${qtyInputHtml}
+                                </div>
+                            </div>
+                            ${priceTagHtml}
+                        </label>
+                    `;
+                });
+            }
+
+            calculateLiveOrderTotal();
+            document.getElementById('order-summary-modal').style.display = "flex";
+        }
+
+        function closeOrderSummaryModal() {
+            document.getElementById('order-summary-modal').style.display = "none";
+            currentActiveOrderCatalogItem = null;
+        }
+
+        function calculateLiveOrderTotal() {
+            if (!currentActiveOrderCatalogItem) return;
+
+            let subtotal = parseInt(currentActiveOrderCatalogItem.price, 10) || 0;
+            let totalGlobalDiscountPercent = 0;
+            const checkboxes = document.querySelectorAll('.order-addon-checkbox');
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const priceAddon = parseInt(cb.getAttribute('data-price'), 10) || 0;
+                    const discountPercent = parseInt(cb.getAttribute('data-discount'), 10) || 0;
+                    const hasQty = cb.getAttribute('data-has-qty') === 'true';
+                    
+                    // Ambil nilai kuantitas dari input box terdekat jika diaktifkan, default 1
+                    let qty = 1;
+                    if (hasQty) {
+                        const qtyInput = cb.closest('label').querySelector('.order-addon-qty-input');
+                        if (qtyInput) {
+                            qty = Math.max(parseInt(qtyInput.value, 10) || 1, 1);
+                        }
+                    }
+
+                    if (priceAddon > 0) {
+                        // Kalikan harga bersih add-on dengan total jumlah barang (qty) yang diinput pembeli
+                        if (discountPercent > 0) {
+                            subtotal += Math.round(priceAddon * (1 - (discountPercent / 100))) * qty;
+                        } else {
+                            subtotal += priceAddon * qty;
+                        }
+                    } else if (priceAddon === 0 && discountPercent > 0) {
+                        // Kumpulkan akumulasi persentase diskon global yang aktif dicentang
+                        totalGlobalDiscountPercent += discountPercent;
+                    }
+                }
+            });
+
+            // Kumpulkan objek diskon terpisah untuk dihitung berurutan sesuai struktur array salinan
+            let finalTotal = subtotal;
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const priceAddon = parseInt(cb.getAttribute('data-price'), 10) || 0;
+                    const discountPercent = parseInt(cb.getAttribute('data-discount'), 10) || 0;
+                    
+                    if (priceAddon === 0 && discountPercent > 0) {
+                        finalTotal = finalTotal - (finalTotal * (discountPercent / 100));
+                    }
+                }
+            });
+
+            // Jika hasil akhir memiliki pecahan/desimal, tampilkan 2 angka di belakang koma, jika bulat tetap tampilkan bersih
+            const formattedTotal = finalTotal % 1 === 0 ? finalTotal : finalTotal.toFixed(2);
+            document.getElementById('order-total-price-display').textContent = `$${formattedTotal}`;
+        }
+
+        function copyOrderDetailsToClipboard() {
+            if (!currentActiveOrderCatalogItem) return;
+
+            const basePrice = parseInt(currentActiveOrderCatalogItem.price, 10) || 0;
+            let total = basePrice;
+            
+            let textLines = [];
+            textLines.push(`=== ORDER DETAILS ===`);
+            textLines.push(`Service: ${currentActiveOrderCatalogItem.desc || 'Custom Art Commission'}`);
+            textLines.push(`Base Price: $${basePrice}`);
+
+            const checkboxes = document.querySelectorAll('.order-addon-checkbox');
+            let hasAddons = false;
+
+            let totalGlobalDiscountPercent = 0;
+
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const addonName = cb.nextElementSibling.textContent.trim();
+                    const addonPrice = parseInt(cb.getAttribute('data-price'), 10) || 0;
+                    const discountPercent = parseInt(cb.getAttribute('data-discount'), 10) || 0;
+
+                    if (addonPrice > 0) {
+                        if (!hasAddons) {
+                            textLines.push(`Add-ons Selected:`);
+                            hasAddons = true;
+                        }
+                        
+                        const hasQty = cb.getAttribute('data-has-qty') === 'true';
+                        let qty = 1;
+                        if (hasQty) {
+                            const qtyInput = cb.closest('label').querySelector('.order-addon-qty-input');
+                            if (qtyInput) qty = Math.max(parseInt(qtyInput.value, 10) || 1, 1);
+                        }
+
+                        if (discountPercent > 0) {
+                            const singleCleanPrice = Math.round(addonPrice * (1 - (discountPercent / 100)));
+                            const cleanAddonPrice = singleCleanPrice * qty;
+                            
+                            // Menambahkan info harga satuan jika jumlah qty lebih dari 1
+                            const qtyLabel = hasQty && qty > 1 ? ` x${qty} (+$${singleCleanPrice} each | +$${cleanAddonPrice} | After ${discountPercent}% Disc)` : ` (+$${cleanAddonPrice} | After ${discountPercent}% Disc)`;
+                            
+                            // Mengubah string peluru awal dari " - " menjadi " -> "
+                            textLines.push(` -> ${addonName}${qtyLabel}`);
+                            total += cleanAddonPrice;
+                        } else {
+                            const cleanAddonPrice = addonPrice * qty;
+                            
+                            // Menambahkan info harga satuan jika jumlah qty lebih dari 1
+                            const qtyLabel = hasQty && qty > 1 ? ` x${qty} (+$${addonPrice} each | +$${cleanAddonPrice})` : ` (+$${cleanAddonPrice})`;
+                            
+                            // Mengubah string peluru awal dari " - " menjadi " -> "
+                            textLines.push(` -> ${addonName}${qtyLabel}`);
+                            total += cleanAddonPrice;
+                        }
+                    } else if (addonPrice === 0 && discountPercent > 0) {
+                        totalGlobalDiscountPercent += discountPercent;
+                    }
+                }
+            });
+
+            // Membuat wadah array untuk mengumpulkan daftar diskon kustom yang dicentang
+            let activeDiscountsList = [];
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const priceAddon = parseInt(cb.getAttribute('data-price'), 10) || 0;
+                    const discountPercent = parseInt(cb.getAttribute('data-discount'), 10) || 0;
+                    
+                    if (priceAddon === 0 && discountPercent > 0) {
+                        activeDiscountsList.push({
+                            name: cb.getAttribute('data-tier-name') || "Discount",
+                            percent: discountPercent
+                        });
+                    }
+                }
+            });
+
+            // Terapkan pemotongan harga satu per satu secara dinamis untuk setiap baris diskon
+            activeDiscountsList.forEach(disc => {
+                const discountCutAmount = total * (disc.percent / 100);
+                const formattedCut = discountCutAmount % 1 === 0 ? discountCutAmount : discountCutAmount.toFixed(2);
+                
+                textLines.push(`${disc.name} Applied: -${disc.percent}% OFF (-$${formattedCut})`);
+                total = total - discountCutAmount;
+            });
+
+            const clipboardFormattedTotal = total % 1 === 0 ? total : total.toFixed(2);
+            textLines.push(`---------------------`);
+            textLines.push(`Total Summary: $${clipboardFormattedTotal}`);
+
+            const finalClipboardText = textLines.join('\n');
+
+            navigator.clipboard.writeText(finalClipboardText).then(() => {
+                // Menggunakan sistem toast mengambang bawaan dashboard Anda untuk notifikasi sukses
+                const toastBox = document.getElementById('social-toast-floating-container');
+                const toastText = document.getElementById('social-toast-floating-text-target');
+                
+                if (toastBox && toastText) {
+                    toastText.textContent = "Order details successfully copied to clipboard!";
+                    toastBox.classList.add('toast-visible-active');
+                    setTimeout(() => {
+                        toastBox.classList.remove('toast-visible-active');
+                    }, 2500);
+                } else {
+                    alert("Order details copied to clipboard!");
+                }
+                // Baris penutup modal telah dihapus agar jendela tetap terbuka
+            }).catch(err => {
+                console.error("Failed to copy order compilation text stack:", err);
+            });
+        }
+
     </script>
 	
     <div id="global-lightbox-modal" onclick="handleLightboxOutsideClick(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.98); z-index: 99999999; flex-direction: column; align-items: center; justify-content: center; user-select: none;">
@@ -1993,5 +2229,33 @@
         }
     </style>
 
+    <!-- Order Summary Modal Container -->
+    <div id="order-summary-modal" onclick="if(event.target === this) closeOrderSummaryModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.85); z-index: 9999999; align-items: center; justify-content: center; font-family: sans-serif;">
+        <div style="background: #161925; border: 1px solid #232738; width: 100%; max-width: 430px; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; color: white;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3142; padding-bottom: 10px;">
+                <strong style="font-size: 1.05rem; color: #ffffff;">Order Customization</strong>
+                <button type="button" onclick="closeOrderSummaryModal()" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 1.1rem; font-weight: bold;">✕</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #111420; padding: 12px; border-radius: 6px; border: 1px solid #232738;">
+                <span style="font-size: 0.9rem; font-weight: bold;">Base Price</span>
+                <span style="font-size: 0.9rem; color: var(--accent-green); font-weight: bold;" id="order-base-price-display">$0</span>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;" id="order-addons-container"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2d3142; padding-top: 14px; margin-top: 6px;">
+                <span style="font-size: 1rem; font-weight: bold; color: #8b949e;">Total Summary:</span>
+                <strong style="font-size: 1.4rem; color: var(--accent-green);" id="order-total-price-display">$0</strong>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
+                <button type="button" onclick="closeOrderSummaryModal()" style="background: #2a2d3d; color: white; border: 1px solid #3f445e; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">Cancel</button>
+                <button type="button" onclick="copyOrderDetailsToClipboard()" style="background: var(--accent-green); color: black; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">Copy Details</button>
+            </div>
+        </div>
+    </div>
+	
 </body>
 </html>
