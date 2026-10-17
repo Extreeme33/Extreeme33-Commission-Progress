@@ -1926,11 +1926,10 @@
                 tiers.forEach((tier, index) => {
                     let priceTagHtml = `<span style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;">+$${tier.price}</span>`;
                     
-                    // Jika data tier tersebut murni berisi potongan diskon (%)
                     if (tier.price === 0 && tier.discount > 0) {
                         priceTagHtml = `<span style="font-size: 0.85rem; color: #ef4444; font-weight: 600;">-${tier.discount}% OFF</span>`;
                     }
-                    // Jika data tier tersebut merupakan harga addon yang memiliki diskon bawaan individual
+
                     else if (tier.price > 0 && tier.discount > 0) {
                         const cellDiscounted = Math.round(tier.price * (1 - (tier.discount / 100)));
                         priceTagHtml = `
@@ -1941,7 +1940,6 @@
                         `;
                     }
 
-                    // Jika fitur kuantitas diaktifkan di admin, siapkan elemen HTML input angka interaktif
                     let qtyInputHtml = "";
                     if (tier.allowQty) {
                         qtyInputHtml = `
@@ -1986,7 +1984,6 @@
                     const discountPercent = parseInt(cb.getAttribute('data-discount'), 10) || 0;
                     const hasQty = cb.getAttribute('data-has-qty') === 'true';
                     
-                    // Ambil nilai kuantitas dari input box terdekat jika diaktifkan, default 1
                     let qty = 1;
                     if (hasQty) {
                         const qtyInput = cb.closest('label').querySelector('.order-addon-qty-input');
@@ -1996,20 +1993,18 @@
                     }
 
                     if (priceAddon > 0) {
-                        // Kalikan harga bersih add-on dengan total jumlah barang (qty) yang diinput pembeli
+
                         if (discountPercent > 0) {
                             subtotal += Math.round(priceAddon * (1 - (discountPercent / 100))) * qty;
                         } else {
                             subtotal += priceAddon * qty;
                         }
                     } else if (priceAddon === 0 && discountPercent > 0) {
-                        // Kumpulkan akumulasi persentase diskon global yang aktif dicentang
                         totalGlobalDiscountPercent += discountPercent;
                     }
                 }
             });
 
-            // Kumpulkan objek diskon terpisah untuk dihitung berurutan sesuai struktur array salinan
             let finalTotal = subtotal;
             checkboxes.forEach(cb => {
                 if (cb.checked) {
@@ -2022,7 +2017,6 @@
                 }
             });
 
-            // Jika hasil akhir memiliki pecahan/desimal, tampilkan 2 angka di belakang koma, jika bulat tetap tampilkan bersih
             const formattedTotal = finalTotal % 1 === 0 ? finalTotal : finalTotal.toFixed(2);
             document.getElementById('order-total-price-display').textContent = `$${formattedTotal}`;
         }
@@ -2066,19 +2060,15 @@
                             const singleCleanPrice = Math.round(addonPrice * (1 - (discountPercent / 100)));
                             const cleanAddonPrice = singleCleanPrice * qty;
                             
-                            // Menambahkan info harga satuan jika jumlah qty lebih dari 1
                             const qtyLabel = hasQty && qty > 1 ? ` x${qty} (+$${singleCleanPrice} each | +$${cleanAddonPrice} | After ${discountPercent}% Disc)` : ` (+$${cleanAddonPrice} | After ${discountPercent}% Disc)`;
                             
-                            // Mengubah string peluru awal dari " - " menjadi " -> "
                             textLines.push(` -> ${addonName}${qtyLabel}`);
                             total += cleanAddonPrice;
                         } else {
                             const cleanAddonPrice = addonPrice * qty;
                             
-                            // Menambahkan info harga satuan jika jumlah qty lebih dari 1
                             const qtyLabel = hasQty && qty > 1 ? ` x${qty} (+$${addonPrice} each | +$${cleanAddonPrice})` : ` (+$${cleanAddonPrice})`;
                             
-                            // Mengubah string peluru awal dari " - " menjadi " -> "
                             textLines.push(` -> ${addonName}${qtyLabel}`);
                             total += cleanAddonPrice;
                         }
@@ -2088,7 +2078,6 @@
                 }
             });
 
-            // Membuat wadah array untuk mengumpulkan daftar diskon kustom yang dicentang
             let activeDiscountsList = [];
             checkboxes.forEach(cb => {
                 if (cb.checked) {
@@ -2104,7 +2093,6 @@
                 }
             });
 
-            // Terapkan pemotongan harga satu per satu secara dinamis untuk setiap baris diskon
             activeDiscountsList.forEach(disc => {
                 const discountCutAmount = total * (disc.percent / 100);
                 const formattedCut = discountCutAmount % 1 === 0 ? discountCutAmount : discountCutAmount.toFixed(2);
@@ -2120,7 +2108,6 @@
             const finalClipboardText = textLines.join('\n');
 
             navigator.clipboard.writeText(finalClipboardText).then(() => {
-                // Menggunakan sistem toast mengambang bawaan dashboard Anda untuk notifikasi sukses
                 const toastBox = document.getElementById('social-toast-floating-container');
                 const toastText = document.getElementById('social-toast-floating-text-target');
                 
@@ -2133,7 +2120,6 @@
                 } else {
                     alert("Order details copied to clipboard!");
                 }
-                // Baris penutup modal telah dihapus agar jendela tetap terbuka
             }).catch(err => {
                 console.error("Failed to copy order compilation text stack:", err);
             });
@@ -2262,7 +2248,6 @@
         }
     </style>
 
-    <!-- Order Summary Modal Container -->
     <div id="order-summary-modal" onclick="if(event.target === this) closeOrderSummaryModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.85); z-index: 9999999; align-items: center; justify-content: center; font-family: sans-serif;">
         <div style="background: #161925; border: 1px solid #232738; width: 100%; max-width: 430px; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; color: white;">
             
