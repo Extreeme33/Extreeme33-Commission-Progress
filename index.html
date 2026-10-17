@@ -280,6 +280,29 @@
             text-transform: uppercase;
             box-shadow: 2px 2px 6px rgba(0,0,0,0.4);
         }
+
+        .catalog-discount-badge {
+            position: absolute;
+            top: -10px;
+            left: 12px;
+            width: fit-content;
+            height: 22px;
+            background-color: #ef4444;
+            color: #ffffff;
+            border-radius: 5px;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35), 2px 2px 6px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+        }
 		
         .custom-tooltip-trigger {
             position: relative;
@@ -1282,8 +1305,18 @@
                     let initialHtmlView = structuralGridsMap.female || structuralGridsMap.male || structuralGridsMap.couple || structuralGridsMap.default;
                     let initialLabel = availableSections.length > 0 ? availableSections[0].label : 'Sample';
 
+                    let baseDiscountBadgeHtml = "";
+                    if (item.baseDiscount > 0) {
+                        baseDiscountBadgeHtml = `
+                            <div class="catalog-discount-badge" style="position: absolute; top: -10px; left: 10px; z-index: 999999;">
+                                ` + item.baseDiscount + `% OFF
+                            </div>
+                        `;
+                    }
+
                     container.innerHTML += `
-                        <div class="card-wrapper" id="card-catalog-${item.id}" data-sections="${sectionsJsonDataAttr}" data-grids="${gridsJsonDataAttr}" data-active-idx="0" style="width: 100%; min-width: 0; height: auto; margin-top: 15px; margin-bottom: 5px;">
+                        <div class="card-wrapper" id="card-catalog-\${item.id}" data-sections="sectionsJsonDataAttr" data-grids="{gridsJsonDataAttr}" data-active-idx="0" style="width: 100%; min-width: 0; height: auto; margin-top: 15px; margin-bottom: 5px;">
+                            ` + baseDiscountBadgeHtml + `
                             <div class="card" style="background-color: var(--bg-card); height: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; position: relative;">
                                 
                                 <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative; min-height: 20px; margin-top: 2px;">
