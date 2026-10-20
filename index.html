@@ -576,6 +576,17 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        .catalog-arrow-btn {
+            transition: all 0.2s ease-in-out !important;
+        }
+        .catalog-arrow-btn:hover {
+            background: #10b981 !important; 
+            color: #000000 !important;                        
+            border-color: #34d399 !important;                  
+            box-shadow: 0 0 14px #10b981, 0 0 4px rgba(16, 185, 129, 0.6) !important;
+            transform: translateY(-50%) scale(1.08) !important; 
+        }
+
     </style>
 	<script src="neutralino.js"></script>
 </head>
@@ -1315,7 +1326,7 @@
                     }
 
                     container.innerHTML += `
-                        <div class="card-wrapper" id="card-catalog-\${item.id}" data-sections="sectionsJsonDataAttr" data-grids="{gridsJsonDataAttr}" data-active-idx="0" style="width: 100%; min-width: 0; height: auto; margin-top: 15px; margin-bottom: 5px;">
+                        <div class="card-wrapper" id="card-catalog-${item.id}" data-sections="${sectionsJsonDataAttr}" data-grids="${gridsJsonDataAttr}" data-active-idx="0" style="width: 100%; min-width: 0; height: auto; margin-top: 15px; margin-bottom: 5px;">
                             ` + baseDiscountBadgeHtml + `
                             <div class="card" style="background-color: var(--bg-card); height: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; position: relative;">
                                 
@@ -1324,13 +1335,13 @@
                                 </div>
 
                                 <div style="width: 100%; position: relative; display: block; margin-top: 4px;">
-                                    <button type="button" onclick="shiftCatalogSectionSlide('${item.id}', -1)" style="position: absolute; left: -13px; top: 50%; transform: translateY(-50%); background: rgba(22, 25, 37, 0.85); border: 1px solid #2d3142; color: #10b981; font-weight: bold; cursor: pointer; width: 26px; height: 32px; border-radius: 4px; display: ${availableSections.length <= 1 ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 0.75rem; user-select: none; z-index: 100;">◀</button>
+                                    <button type="button" class="catalog-arrow-btn" onclick="shiftCatalogSectionSlide('${item.id}', -1)" style="position: absolute; left: -13px; top: 50%; transform: translateY(-50%); background: rgba(22, 25, 37, 0.85); border: 1px solid #2d3142; color: #10b981; font-weight: bold; cursor: pointer; width: 26px; height: 32px; border-radius: 4px; display: ${availableSections.length <= 1 ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 0.75rem; user-select: none; z-index: 100;">◀</button>
                                     
                                     <div id="catalog-display-canvas-${item.id}" class="catalog-multi-images-grid rich-text-wrapper" style="width: 100%; aspect-ratio: 1 / 1 !important; height: auto; margin: 0; position: relative;">
                                         ${initialHtmlView}
                                     </div>
                                     
-                                    <button type="button" onclick="shiftCatalogSectionSlide('${item.id}', 1)" style="position: absolute; right: -13px; top: 50%; transform: translateY(-50%); background: rgba(22, 25, 37, 0.85); border: 1px solid #2d3142; color: #10b981; font-weight: bold; cursor: pointer; width: 26px; height: 32px; border-radius: 4px; display: ${availableSections.length <= 1 ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 0.75rem; user-select: none; z-index: 100;">▶</button>
+                                    <button type="button" class="catalog-arrow-btn" onclick="shiftCatalogSectionSlide('${item.id}', 1)" style="position: absolute; right: -13px; top: 50%; transform: translateY(-50%); background: rgba(22, 25, 37, 0.85); border: 1px solid #2d3142; color: #10b981; font-weight: bold; cursor: pointer; width: 26px; height: 32px; border-radius: 4px; display: ${availableSections.length <= 1 ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 0.75rem; user-select: none; z-index: 100;">▶</button>
                                 </div>
 
                                 <div style="font-size: 0.9rem; color: #ffffff; line-height: 1.4; text-align: center; font-weight: bold; margin-top: 2px; width: 100%;">${item.desc}</div>
