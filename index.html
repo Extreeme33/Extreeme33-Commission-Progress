@@ -1477,12 +1477,10 @@
             let lastReadShop = 0;
             let lastReadUpdateId = 0;
 
-            // 4. Membaca konfigurasi checkpoint waktu dengan sistem Penyesuaian Deteksi Mode Web & Lokal
             let fallbackInitialTime = new Date().getTime();
             
-            // Jika diakses lewat browser/web (bukan EXE lokal), mundurkan waktu acuan agar katalog baru tetap memicu lampu hijau
             if (typeof Neutralino === 'undefined') {
-                fallbackInitialTime = fallbackInitialTime - 3600000; // Mundur 1 jam ke belakang untuk toleransi rilis konten baru
+                fallbackInitialTime = fallbackInitialTime - 3600000; 
             }
             
             let maxStatusIdInDatabase = 0;
@@ -2274,7 +2272,7 @@
                 textToDisplay = internalShopRulesText;
             }
 
-            displayArea.textContent = textToDisplay && textToDisplay.trim() !== "" 
+            displayArea.innerHTML = textToDisplay && textToDisplay.trim() !== "" 
                 ? textToDisplay 
                 : `No rules or guidelines have been configured yet for the ${activeDashboardTab} section.`;
                 
@@ -2436,12 +2434,12 @@
     </div>
 	
     <div id="public-rules-display-modal" onclick="if(event.target === this) closePublicRulesModalView()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.85); z-index: 9999999; align-items: center; justify-content: center; font-family: sans-serif;">
-        <div style="background: #161925; border: 1px solid #232738; width: 100%; max-width: 500px; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; color: white;">
+        <div style="background: #161925; border: 1px solid #232738; width: 100%; max-width: 850px; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; color: white;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3142; padding-bottom: 10px;">
                 <strong style="font-size: 1.05rem; color: #ffffff; display: flex; align-items: center; gap: 8px;">📋 Rules & Guidelines</strong>
                 <button type="button" onclick="closePublicRulesModalView()" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 1.1rem; font-weight: bold;">✕</button>
             </div>
-            <div style="max-height: 350px; overflow-y: auto; background: #111420; padding: 15px; border-radius: 8px; border: 1px solid #232738; white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5; color: #e4e6eb; text-align: left;" id="public-rules-content-target-area">
+            <div style="max-height: 500px; overflow-y: auto; background: #111420; padding: 15px; border-radius: 8px; border: 1px solid #232738; white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5; color: #e4e6eb; text-align: left;" id="public-rules-content-target-area">
                 Loading rules content mappings...
             </div>
             <div style="display: flex; justify-content: flex-end; margin-top: 4px;">

@@ -131,6 +131,6 @@
             ]
         }
     ],
-    "catalogRulesText": "aaaaaaaaaaaa",
+    "catalogRulesText": "aaaaaaaaaaaa<div><br></div><div><b><font size=\"5\" color=\"#ff0505\">Test 1</font><br><font color=\"#a280ff\">aaaaaaa</font></b></div>",
     "shopRulesText": "bbbbbbbbbbbbbbbbb"
 }
