@@ -634,6 +634,7 @@
         <div style="width: 100%; border-top: 1px solid #2d3142; margin-bottom: 20px;"></div>
 
         <div id="search-bar-row-wrapper" style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 25px; width: 100%;">
+            <button type="button" onclick="openPublicRulesModalView()" style="display: none; background: var(--accent-orange); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; height: 38px; align-items: center; gap: 6px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">📋 Rules</button>
             <input type="text" id="dashboard-search-box" class="search-box" placeholder="Search by Name or Status..." style="width: 300px; background: var(--bg-input); border: 1px solid #2d3142; padding: 8px 16px; border-radius: 6px; color: white; margin: 0;">
             
             <select id="dashboard-sort-select" style="background: var(--bg-input); border: 1px solid #2d3142; padding: 8px 12px; border-radius: 6px; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; height: 38px; text-align: center;">
@@ -710,6 +711,9 @@
                         adminStatusFeed = parsed.statusFeed || []; 
                         globalAvatar = parsed.globalAvatar || "";
 						window.equipdex_parsed_payload = parsed;
+						internalRulesDatabaseText = parsed.rulesDataText || "";
+						internalCatalogRulesText = parsed.catalogRulesText || cloudPackage.catalogRulesText || "";
+						internalShopRulesText = parsed.shopRulesText || cloudPackage.shopRulesText || "";
                     } else {
                         itemDatabase = Array.isArray(parsed) ? parsed : [];
                         adminStatusFeed = [];
@@ -751,6 +755,8 @@
                                 window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
                                 window.globalAvatar = cloudPackage.globalAvatar || "";
 								window.equipdex_parsed_payload = cloudPackage; 
+								internalCatalogRulesText = parsed.catalogRulesText || cloudPackage.catalogRulesText || "";
+								internalShopRulesText = parsed.shopRulesText || cloudPackage.shopRulesText || "";
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
                                 
@@ -944,19 +950,31 @@
                 if (itemStatus !== activeDashboardTab) return false;
                 
                 if (searchQuery !== "") {
-                    const itemTitle = (item.title || "").toLowerCase();
-                    const itemSub1 = (item.subStatus || "").toLowerCase();
-                    const itemSub2 = (item.subStatus2 || "").toLowerCase();
-                    
-                    const matchesTitle = itemTitle.includes(searchQuery);
-                    const matchesSub1 = itemSub1.includes(searchQuery);
-                    const matchesSub2 = itemSub2.includes(searchQuery);
-                    
-                    const isSearchingWorkInProgress = "work in progress".includes(searchQuery) || searchQuery.includes("work in progress");
-                    const matchesWipPhrase = isSearchingWorkInProgress && itemSub1 === "wip";
-                    
-                    if (!matchesTitle && !matchesSub1 && !matchesSub2 && !matchesWipPhrase) {
-                        return false;
+                    if (activeDashboardTab === "catalog") {
+                        const itemDesc = (item.desc || "").toLowerCase();
+                        const itemPrice = String(item.price || "");
+                        
+                        const matchesDesc = itemDesc.includes(searchQuery);
+                        const matchesPrice = itemPrice.includes(searchQuery);
+                        
+                        if (!matchesDesc && !matchesPrice) {
+                            return false;
+                        }
+                    } else {
+                        const itemTitle = (item.title || "").toLowerCase();
+                        const itemSub1 = (item.subStatus || "").toLowerCase();
+                        const itemSub2 = (item.subStatus2 || "").toLowerCase();
+                        
+                        const matchesTitle = itemTitle.includes(searchQuery);
+                        const matchesSub1 = itemSub1.includes(searchQuery);
+                        const matchesSub2 = itemSub2.includes(searchQuery);
+                        
+                        const isSearchingWorkInProgress = "work in progress".includes(searchQuery) || searchQuery.includes("work in progress");
+                        const matchesWipPhrase = isSearchingWorkInProgress && itemSub1 === "wip";
+                        
+                        if (!matchesTitle && !matchesSub1 && !matchesSub2 && !matchesWipPhrase) {
+                            return false;
+                        }
                     }
                 }
                 return true;
@@ -1235,10 +1253,44 @@
             }
 
             if (activeDashboardTab === "catalog") {
-                const globalCatalogDatabase = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData : [];
+                const originalCatalogLength = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData.length : 0;
+                let globalCatalogDatabase = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData : [];
                 
+                if (searchQuery !== "") {
+                    globalCatalogDatabase = globalCatalogDatabase.filter(item => {
+                        const itemDesc = (item.desc || "").toLowerCase();
+                        const itemPrice = String(item.price || "");
+                        return itemDesc.includes(searchQuery) || itemPrice.includes(searchQuery);
+                    });
+                }
+
+                const sortValue = sortSelect ? sortSelect.value : "date-desc";
+                if (sortValue.startsWith("price")) {
+                    globalCatalogDatabase.sort((a, b) => {
+                        const priceA = parseFloat(a.price) || 0;
+                        const priceB = parseFloat(b.price) || 0;
+                        return sortValue === "price-asc" ? priceA - priceB : priceB - priceA;
+                    });
+                } else if (sortValue.startsWith("name")) {
+                    globalCatalogDatabase.sort((a, b) => {
+                        const descA = (a.desc || "").toLowerCase();
+                        const descB = (b.desc || "").toLowerCase();
+                        return sortValue === "name-asc" ? descA.localeCompare(descB) : descB.localeCompare(descA);
+                    });
+                } else {
+                    globalCatalogDatabase.sort((a, b) => {
+                        const timeA = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+                        const timeB = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+                        return sortValue === "date-desc" ? timeB - timeA : timeA - timeB;
+                    });
+                }
+
                 if (!globalCatalogDatabase || globalCatalogDatabase.length === 0) {
-                    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 20px; font-size: 0.95rem; letter-spacing: 0.02em;">The commission catalog is currently empty. Stay tuned!</div>`;
+                    if (searchQuery !== "" && originalCatalogLength > 0) {
+                        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 20px; font-size: 0.95rem; letter-spacing: 0.02em;">No catalog items found matching your search.</div>`;
+                    } else {
+                        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 50px 20px; font-size: 0.95rem; letter-spacing: 0.02em;">The commission catalog is currently empty. Stay tuned!</div>`;
+                    }
                     return;
                 }
 
@@ -1379,9 +1431,12 @@
         function calculateTabNotifications() {
             const activeFeed = window.adminStatusFeed || (typeof adminStatusFeed !== 'undefined' ? adminStatusFeed : []);
             const activeItems = itemDatabase || [];
+            const globalCatalogDatabase = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData : [];
 
             let newestProgressTime = 0;
             let newestFinishedTime = 0;
+            let newestCatalogTime = 0;
+            let newestShopTime = 0;
             let newestUpdateId = 0; 
 
             activeItems.forEach(item => {
@@ -1395,6 +1450,22 @@
                 if (status === "finished" && itemTime > newestFinishedTime) newestFinishedTime = itemTime;
             });
 
+            globalCatalogDatabase.forEach(item => {
+                let itemTime = 0;
+                if (item.lastUpdated) {
+                    const parsedDate = new Date(item.lastUpdated);
+                    itemTime = isNaN(parsedDate.getTime()) ? 0 : parsedDate.getTime();
+                }
+                
+                const isShopItem = (item.id && String(item.id).startsWith('shop_')) || item.status === "shop";
+                
+                if (isShopItem) {
+                    if (itemTime > newestShopTime) newestShopTime = itemTime;
+                } else {
+                    if (itemTime > newestCatalogTime) newestCatalogTime = itemTime;
+                }
+            });
+
             activeFeed.forEach(post => {
                 const postId = parseInt(post.id) || 0;
                 if (postId > newestUpdateId) newestUpdateId = postId;
@@ -1402,26 +1473,37 @@
 
             let lastReadProgress = 0;
             let lastReadFinished = 0;
+            let lastReadCatalog = 0;
+            let lastReadShop = 0;
             let lastReadUpdateId = 0;
 
+            const fallbackInitialTime = new Date().getTime();
+            
+            let maxStatusIdInDatabase = 0;
+            activeFeed.forEach(post => {
+                const pId = parseInt(post.id) || 0;
+                if (pId > maxStatusIdInDatabase) maxStatusIdInDatabase = pId;
+            });
+
             if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
-
-                lastReadProgress = parseInt(localReadRegistry.last_read_time_progress, 10) || 0;
-                lastReadFinished = parseInt(localReadRegistry.last_read_time_finished, 10) || 0;
-                lastReadUpdateId = parseInt(localReadRegistry.last_read_id_update, 10) || 0;
+                lastReadProgress = parseInt(localReadRegistry.last_read_time_progress, 10) || fallbackInitialTime;
+                lastReadFinished = parseInt(localReadRegistry.last_read_time_finished, 10) || fallbackInitialTime;
+                lastReadCatalog  = parseInt(localReadRegistry.last_read_time_catalog, 10) || fallbackInitialTime;
+                lastReadShop     = parseInt(localReadRegistry.last_read_time_shop, 10) || fallbackInitialTime;
+                lastReadUpdateId = parseInt(localReadRegistry.last_read_id_update, 10) || maxStatusIdInDatabase;
             } else {
-
-                lastReadProgress = parseInt(localStorage.getItem('last_read_time_progress'), 10) || 0;
-                lastReadFinished = parseInt(localStorage.getItem('last_read_time_finished'), 10) || 0;
-                lastReadUpdateId = parseInt(localStorage.getItem('last_read_id_update'), 10) || 0;
+                lastReadProgress = parseInt(localStorage.getItem('last_read_time_progress'), 10) || fallbackInitialTime;
+                lastReadFinished = parseInt(localStorage.getItem('last_read_time_finished'), 10) || fallbackInitialTime;
+                lastReadCatalog  = parseInt(localStorage.getItem('last_read_time_catalog'), 10) || fallbackInitialTime;
+                lastReadShop     = parseInt(localStorage.getItem('last_read_time_shop'), 10) || fallbackInitialTime;
+                lastReadUpdateId = parseInt(localStorage.getItem('last_read_id_update'), 10) || maxStatusIdInDatabase;
             }
 
             document.getElementById('dot-progress').style.display = (newestProgressTime > lastReadProgress) ? "block" : "none";
             document.getElementById('dot-finished').style.display = (newestFinishedTime > lastReadFinished) ? "block" : "none";
+            document.getElementById('dot-catalog').style.display  = (newestCatalogTime > lastReadCatalog) ? "block" : "none";
+            document.getElementById('dot-shop').style.display     = (newestShopTime > lastReadShop) ? "block" : "none";
             document.getElementById('dot-update').style.display   = (newestUpdateId > lastReadUpdateId) ? "block" : "none";
-            
-            document.getElementById('dot-catalog').style.display  = "none";
-            document.getElementById('dot-shop').style.display     = "none";
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1474,6 +1556,42 @@
                         } else {
                             if (searchRow) searchRow.style.display = "flex";
                             if (paginationRow) paginationRow.style.display = "flex";
+
+                            const publicRulesBtn = document.querySelector('button[onclick="openPublicRulesModalView()"]');
+                            if (publicRulesBtn) {
+                                if (selectedText === "catalog" || selectedText === "shop") {
+                                    publicRulesBtn.style.display = "flex";
+                                } else {
+                                    publicRulesBtn.style.display = "none";
+                                }
+                            }
+                            
+                            if (searchInputBox) {
+                                const sortSelectBox = document.getElementById('dashboard-sort-select');
+                                if (selectedText === "catalog") {
+                                    searchInputBox.placeholder = "Search by Name or Price...";
+                                    if (sortSelectBox && !sortSelectBox.querySelector('option[value="price-asc"]')) {
+                                        sortSelectBox.innerHTML = `
+                                            <option value="date-desc">Sort: Newest</option>
+                                            <option value="date-asc">Sort: Oldest</option>
+                                            <option value="name-asc">Name (A-Z)</option>
+                                            <option value="name-desc">Name (Z-A)</option>
+                                            <option value="price-asc">Price: Low to High</option>
+                                            <option value="price-desc">Price: High to Low</option>
+                                        `;
+                                    }
+                                } else {
+                                    searchInputBox.placeholder = "Search by Name or Status...";
+                                    if (sortSelectBox && sortSelectBox.querySelector('option[value="price-asc"]')) {
+                                        sortSelectBox.innerHTML = `
+                                            <option value="date-desc">Sort: Newest</option>
+                                            <option value="date-asc">Sort: Oldest</option>
+                                            <option value="name-asc">Name (A-Z)</option>
+                                            <option value="name-desc">Name (Z-A)</option>
+                                        `;
+                                    }
+                                }
+                            }
                         }
                         
                         calculateTabNotifications();
@@ -2136,6 +2254,31 @@
             });
         }
 
+        let internalCatalogRulesText = "";
+        let internalShopRulesText = "";
+
+        function openPublicRulesModalView() {
+            const displayArea = document.getElementById('public-rules-content-target-area');
+            if (!displayArea) return;
+
+            let textToDisplay = "";
+            if (activeDashboardTab === "catalog") {
+                textToDisplay = internalCatalogRulesText;
+            } else if (activeDashboardTab === "shop") {
+                textToDisplay = internalShopRulesText;
+            }
+
+            displayArea.textContent = textToDisplay && textToDisplay.trim() !== "" 
+                ? textToDisplay 
+                : `No rules or guidelines have been configured yet for the ${activeDashboardTab} section.`;
+                
+            document.getElementById('public-rules-display-modal').style.display = "flex";
+        }
+
+        function closePublicRulesModalView() {
+            document.getElementById('public-rules-display-modal').style.display = "none";
+        }
+
     </script>
 	
     <div id="global-lightbox-modal" onclick="handleLightboxOutsideClick(event)" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.98); z-index: 99999999; flex-direction: column; align-items: center; justify-content: center; user-select: none;">
@@ -2286,5 +2429,20 @@
         </div>
     </div>
 	
+    <div id="public-rules-display-modal" onclick="if(event.target === this) closePublicRulesModalView()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.85); z-index: 9999999; align-items: center; justify-content: center; font-family: sans-serif;">
+        <div style="background: #161925; border: 1px solid #232738; width: 100%; max-width: 500px; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; color: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3142; padding-bottom: 10px;">
+                <strong style="font-size: 1.05rem; color: #ffffff; display: flex; align-items: center; gap: 8px;">📋 Rules & Guidelines</strong>
+                <button type="button" onclick="closePublicRulesModalView()" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 1.1rem; font-weight: bold;">✕</button>
+            </div>
+            <div style="max-height: 350px; overflow-y: auto; background: #111420; padding: 15px; border-radius: 8px; border: 1px solid #232738; white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5; color: #e4e6eb; text-align: left;" id="public-rules-content-target-area">
+                Loading rules content mappings...
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                <button type="button" onclick="closePublicRulesModalView()" style="background: #2a2d3d; color: white; border: 1px solid #3f445e; padding: 8px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">Close</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
