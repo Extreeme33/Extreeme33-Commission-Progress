@@ -755,8 +755,8 @@
                                 window.adminStatusFeed = cloudPackage.adminStatusFeed || [];
                                 window.globalAvatar = cloudPackage.globalAvatar || "";
 								window.equipdex_parsed_payload = cloudPackage; 
-								internalCatalogRulesText = parsed.catalogRulesText || cloudPackage.catalogRulesText || "";
-								internalShopRulesText = parsed.shopRulesText || cloudPackage.shopRulesText || "";
+                                internalCatalogRulesText = cloudPackage.catalogRulesText || "";
+                                internalShopRulesText = cloudPackage.shopRulesText || "";
                                 
                                 console.log("Cloud JSON payloads synchronized successfully!");
                                 
@@ -1477,7 +1477,13 @@
             let lastReadShop = 0;
             let lastReadUpdateId = 0;
 
-            const fallbackInitialTime = new Date().getTime();
+            // 4. Membaca konfigurasi checkpoint waktu dengan sistem Penyesuaian Deteksi Mode Web & Lokal
+            let fallbackInitialTime = new Date().getTime();
+            
+            // Jika diakses lewat browser/web (bukan EXE lokal), mundurkan waktu acuan agar katalog baru tetap memicu lampu hijau
+            if (typeof Neutralino === 'undefined') {
+                fallbackInitialTime = fallbackInitialTime - 3600000; // Mundur 1 jam ke belakang untuk toleransi rilis konten baru
+            }
             
             let maxStatusIdInDatabase = 0;
             activeFeed.forEach(post => {
