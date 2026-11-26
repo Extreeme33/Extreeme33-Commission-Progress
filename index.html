@@ -587,6 +587,93 @@
             transform: translateY(-50%) scale(1.08) !important; 
         }
 
+        /* ===== Catalog cards (remastered, matches admin) ===== */
+        .cat-card {
+            position: relative;
+            display: flex; flex-direction: column;
+            background: var(--bg-card);
+            border: 1px solid #232738;
+            border-radius: 14px;
+            overflow: hidden;
+            min-width: 0;
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .cat-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(16,185,129,0.45);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.4);
+        }
+        .cat-media { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #0b0d14; }
+        .cat-media .cat-canvas {
+            position: absolute !important; inset: 0;
+            width: 100% !important; height: 100% !important;
+            aspect-ratio: auto !important;
+            margin: 0 !important; border: none !important; border-radius: 0 !important; gap: 0 !important; display: block !important;
+        }
+        .cat-pill {
+            position: absolute; top: 10px; left: 10px; z-index: 5;
+            padding: 4px 10px; border-radius: 999px;
+            background: rgba(10,12,20,0.72); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+            color: #ffffff; pointer-events: none;
+        }
+        .cat-ribbon {
+            position: absolute; top: 10px; right: 10px; z-index: 5;
+            padding: 4px 10px; border-radius: 999px;
+            background: #ef4444; color: #fff;
+            font-size: 0.72rem; font-weight: 800; letter-spacing: 0.03em;
+            box-shadow: 0 4px 12px rgba(239,68,68,0.4);
+            pointer-events: none;
+        }
+        .cat-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%); z-index: 6;
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(10,12,20,0.7); backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ffffff; font-size: 1.2rem; line-height: 1; padding: 0 0 2px 0;
+            cursor: pointer; opacity: 0;
+            transition: opacity 0.18s, background 0.15s, border-color 0.15s;
+        }
+        .cat-arrow-l { left: 8px; }
+        .cat-arrow-r { right: 8px; }
+        .cat-media:hover .cat-arrow { opacity: 1; }
+        .cat-arrow:hover { background: var(--accent-green); border-color: #34d399; color: #04130d; }
+        .cat-dots {
+            position: absolute; bottom: 10px; left: 0; right: 0; z-index: 5;
+            display: flex; justify-content: center; gap: 5px; pointer-events: none;
+        }
+        .cat-dots span {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,0.4);
+            transition: width 0.2s, background 0.2s;
+        }
+        .cat-dots span.on { width: 18px; border-radius: 4px; background: #34d399; }
+
+        .cat-body { padding: 12px 14px 10px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .cat-title {
+            font-size: 0.92rem; font-weight: 600; line-height: 1.35; color: #ffffff;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+            min-height: 2.7em; word-break: break-word;
+        }
+        .cat-price { display: flex; align-items: baseline; gap: 6px; }
+        .cat-price span { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .cat-price strong { font-size: 1.25rem; color: #34d399; font-weight: 800; }
+
+        .cat-actions {
+            display: grid; grid-template-columns: 1fr; gap: 6px;
+            padding: 10px 12px 12px; border-top: 1px solid #232738; background: rgba(0,0,0,0.12);
+        }
+        .cat-order {
+            height: 32px; border-radius: 8px; border: none;
+            background: var(--accent-green); color: #04130d;
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 0.03em; cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .cat-order:hover { background: #34d399; }
+        .cat-order:active { transform: translateY(1px); }
+
     </style>
 	<script src="neutralino.js"></script>
 </head>
@@ -700,11 +787,115 @@
             }
         }
 		
+        // ===== DRAW DASHBOARD STORAGE LAYER (one file per tab) =====
+        const DD_PREFIX = 'draw_dashboard_';
+        const DD_META_KEY = 'draw_dashboard_meta';
+        const DD_LEGACY_PAYLOAD = 'equipdex_demo_payload';
+        const DD_LEGACY_CHECKPOINT = 'equipdex_read_checkpoint';
+        const DD_PARTS = ['progress', 'finished', 'shop', 'update', 'catalog', 'settings'];
+        const DD_SETTING_KEYS = ['globalAvatar', 'socialMediaData', 'customSocialList', 'catalogRulesText', 'shopRulesText', 'rulesDataText'];
+        const ddCache = {};
+
+        function ddHasNative() { return typeof Neutralino !== 'undefined' && !!Neutralino.storage; }
+
+        async function ddGet(key) {
+            try { return await Neutralino.storage.getData(key); } catch (e) { return null; }
+        }
+
+        function ddSplitItems(list) {
+            const out = { progress: [], finished: [], shop: [] };
+            (Array.isArray(list) ? list : []).forEach(it => {
+                if (it && (it.status === 'shop' || (it.id && String(it.id).startsWith('shop_')))) out.shop.push(it);
+                else if (it && it.status === 'finished') out.finished.push(it);
+                else out.progress.push(it);
+            });
+            return out;
+        }
+
+        function ddSplitPackage(pkg) {
+            if (Array.isArray(pkg)) pkg = { komisiData: pkg };
+            pkg = pkg || {};
+            const items = ddSplitItems(pkg.komisiData);
+            const settings = {};
+            DD_SETTING_KEYS.forEach(k => { if (pkg[k] !== undefined) settings[k] = pkg[k]; });
+            return {
+                progress: items.progress, finished: items.finished, shop: items.shop,
+                update: pkg.statusFeed || [], catalog: pkg.catalogData || [], settings: settings
+            };
+        }
+
+        async function ddIsMigrated() { return !!(await ddGet(DD_META_KEY)); }
+
+        // Returns the same package shape the old single file used.
+        async function ddLoadPackage() {
+            if (await ddIsMigrated()) {
+                const raw = await Promise.all(DD_PARTS.map(p => ddGet(DD_PREFIX + p)));
+                const d = {};
+                DD_PARTS.forEach((p, i) => {
+                    ddCache[p] = raw[i];
+                    if (!raw[i]) { d[p] = null; return; }
+                    try { d[p] = JSON.parse(raw[i]); }
+                    catch (e) { throw new Error('Storage file ' + DD_PREFIX + p + ' is unreadable: ' + e.message); }
+                });
+                return Object.assign({
+                    komisiData: [].concat(d.progress || [], d.finished || [], d.shop || []),
+                    statusFeed: d.update || [],
+                    catalogData: d.catalog || []
+                }, d.settings || {});
+            }
+            const legacyRaw = await Neutralino.storage.getData(DD_LEGACY_PAYLOAD);
+            return JSON.parse(legacyRaw);
+        }
+
+        // Saves only the keys given. Before migration -> old single file. After -> only the changed tab files.
+        async function ddSavePartial(partial) {
+            if (!ddHasNative()) return false;
+            if (!(await ddIsMigrated())) {
+                let cur = {};
+                try { cur = JSON.parse(await Neutralino.storage.getData(DD_LEGACY_PAYLOAD)) || {}; } catch (e) { cur = {}; }
+                if (Array.isArray(cur)) cur = { komisiData: cur };
+                Object.assign(cur, partial);
+                await Neutralino.storage.setData(DD_LEGACY_PAYLOAD, JSON.stringify(cur));
+                return true;
+            }
+            const out = {};
+            if ('komisiData' in partial) {
+                const s = ddSplitItems(partial.komisiData);
+                out.progress = s.progress; out.finished = s.finished; out.shop = s.shop;
+            }
+            if ('statusFeed' in partial) out.update = partial.statusFeed || [];
+            if ('catalogData' in partial) out.catalog = partial.catalogData || [];
+            const touched = DD_SETTING_KEYS.filter(k => k in partial);
+            if (touched.length) {
+                let cur = {};
+                const raw = (ddCache.settings !== undefined && ddCache.settings !== null) ? ddCache.settings : await ddGet(DD_PREFIX + 'settings');
+                try { cur = raw ? JSON.parse(raw) : {}; } catch (e) { cur = {}; }
+                touched.forEach(k => { cur[k] = partial[k]; });
+                out.settings = cur;
+            }
+            for (const p of Object.keys(out)) {
+                const str = JSON.stringify(out[p]);
+                if (ddCache[p] === str) continue;
+                await Neutralino.storage.setData(DD_PREFIX + p, str);
+                ddCache[p] = str;
+            }
+            return true;
+        }
+
+        async function ddReadCheckpoint() {
+            let raw = await ddGet(DD_PREFIX + 'read_checkpoint');
+            if (!raw) raw = await ddGet(DD_LEGACY_CHECKPOINT);
+            return raw;
+        }
+        async function ddWriteCheckpoint(str) {
+            await Neutralino.storage.setData(DD_PREFIX + 'read_checkpoint', str);
+        }
+        // ===== END STORAGE LAYER =====
+
         async function syncDashboardPayload() {
             try {
                 if (typeof Neutralino !== 'undefined' && Neutralino.storage) {
-                    let rawData = await Neutralino.storage.getData('equipdex_demo_payload');
-                    const parsed = JSON.parse(rawData);
+                    const parsed = await ddLoadPackage();
                     
                     if (parsed && !Array.isArray(parsed) && parsed.komisiData) {
                         itemDatabase = parsed.komisiData || [];
@@ -712,15 +903,15 @@
                         globalAvatar = parsed.globalAvatar || "";
 						window.equipdex_parsed_payload = parsed;
 						internalRulesDatabaseText = parsed.rulesDataText || "";
-						internalCatalogRulesText = parsed.catalogRulesText || cloudPackage.catalogRulesText || "";
-						internalShopRulesText = parsed.shopRulesText || cloudPackage.shopRulesText || "";
+						internalCatalogRulesText = parsed.catalogRulesText || "";
+						internalShopRulesText = parsed.shopRulesText || "";
                     } else {
                         itemDatabase = Array.isArray(parsed) ? parsed : [];
                         adminStatusFeed = [];
                     }
 
                     try {
-                        let checkpointData = await Neutralino.storage.getData('equipdex_read_checkpoint');
+                        let checkpointData = await ddReadCheckpoint();
                         if (checkpointData) {
                             localReadRegistry = JSON.parse(checkpointData);
                             console.log("Local click checkpoints successfully resolved from native storage layer.");
@@ -781,7 +972,7 @@
             }
         }
 		
-        let itemDatabase = JSON.parse("[{\"id\":1794663311815,\"title\":\"Bul***'s Request\",\"progress\":100,\"color\":\"#de9921\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":0,\"workStage\":\"none\",\"baseDiscount\":0,\"lastUpdated\":\"2026-11-24T14:04:35.740Z\"},{\"id\":1792895055362,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":14,\"workStage\":\"none\",\"baseDiscount\":0,\"lastUpdated\":\"2026-10-27T09:57:08.729Z\"},{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":1,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":10,\"workStage\":\"sketch\",\"baseDiscount\":0,\"lastUpdated\":\"2026-11-25T16:27:51.359Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"baseDiscount\":0,\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"}]");
+        let itemDatabase = JSON.parse("[{\"id\":1791166228586,\"title\":\"Sno***'s Request\",\"progress\":1,\"color\":\"#4da9ff\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"progress\",\"subStatus\":\"wip\",\"subStatus2\":\"commission\",\"repeatOrder\":10,\"workStage\":\"sketch\",\"baseDiscount\":0,\"lastUpdated\":\"2026-11-25T16:27:51.359Z\"},{\"id\":1794663311815,\"title\":\"Bul***'s Request\",\"progress\":100,\"color\":\"#de9921\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":0,\"workStage\":\"none\",\"baseDiscount\":0,\"lastUpdated\":\"2026-11-24T14:04:35.740Z\"},{\"id\":1792895055362,\"title\":\"Smoo***'s Request\",\"progress\":100,\"color\":\"#ffe188\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"commission\",\"repeatOrder\":14,\"workStage\":\"none\",\"baseDiscount\":0,\"lastUpdated\":\"2026-10-27T09:57:08.729Z\"},{\"id\":1790950104204,\"title\":\"Djan***'s Request\",\"progress\":100,\"color\":\"#fc6320\",\"cardBgColor\":\"#161925\",\"fontColor\":\"#ffffff\",\"strokeColor\":\"#000000\",\"useStroke\":false,\"status\":\"finished\",\"subStatus\":\"finished\",\"subStatus2\":\"compensation\",\"repeatOrder\":0,\"workStage\":\"none\",\"baseDiscount\":0,\"lastUpdated\":\"2026-10-05T02:13:32.835Z\"}]");
 		let adminStatusFeed = [];
 		let globalAvatar = "";
         let activeDashboardTab = "progress";
@@ -1295,7 +1486,7 @@
                 }
 
                 container.style.gridTemplateColumns = "repeat(5, minmax(0, 1fr))";
-                container.style.gap = "15px";
+                container.style.gap = "20px";
 
                 globalCatalogDatabase.forEach((item) => {
                     const availableSections = [];
@@ -1368,42 +1559,33 @@
                     let initialHtmlView = structuralGridsMap.female || structuralGridsMap.male || structuralGridsMap.couple || structuralGridsMap.default;
                     let initialLabel = availableSections.length > 0 ? availableSections[0].label : 'Sample';
 
-                    let baseDiscountBadgeHtml = "";
-                    if (item.baseDiscount > 0) {
-                        baseDiscountBadgeHtml = `
-                            <div class="catalog-discount-badge" style="position: absolute; top: -10px; left: 10px; z-index: 999999;">
-                                ` + item.baseDiscount + `% OFF
-                            </div>
-                        `;
-                    }
+                    const multi = availableSections.length > 1;
+                    const escDesc = String(item.desc || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    const dotsHtml = multi
+                        ? '<div class="cat-dots" id="catalog-dots-' + item.id + '">' + availableSections.map((s, i) => '<span class="' + (i === 0 ? 'on' : '') + '"></span>').join('') + '</div>'
+                        : '';
+                    const ribbonHtml = item.baseDiscount > 0 ? '<div class="cat-ribbon">-' + item.baseDiscount + '%</div>' : '';
 
                     container.innerHTML += `
-                        <div class="card-wrapper" id="card-catalog-${item.id}" data-sections="${sectionsJsonDataAttr}" data-grids="${gridsJsonDataAttr}" data-active-idx="0" style="width: 100%; min-width: 0; height: auto; margin-top: 15px; margin-bottom: 5px;">
-                            ` + baseDiscountBadgeHtml + `
-                            <div class="card" style="background-color: var(--bg-card); height: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; position: relative;">
-                                
-                                <div style="display: flex; align-items: center; justify-content: center; width: 100%; position: relative; min-height: 20px; margin-top: 2px;">
-                                    <span id="catalog-label-indicator-${item.id}" style="font-size: 0.72rem; color: #ffffff; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed #2d3142; padding-bottom: 2px; display: inline-block;">${initialLabel}</span>
+                        <div class="cat-card" id="card-catalog-${item.id}" data-sections="${sectionsJsonDataAttr}" data-grids="${gridsJsonDataAttr}" data-active-idx="0">
+                            <div class="cat-media">
+                                <div id="catalog-display-canvas-${item.id}" class="catalog-multi-images-grid rich-text-wrapper cat-canvas">
+                                    ${initialHtmlView}
                                 </div>
+                                <span id="catalog-label-indicator-${item.id}" class="cat-pill">${initialLabel}</span>
+                                ` + ribbonHtml + `
+                                ` + (multi ? `<button type="button" class="cat-arrow cat-arrow-l" onclick="shiftCatalogSectionSlide('${item.id}', -1)" title="Previous set">‹</button>
+                                <button type="button" class="cat-arrow cat-arrow-r" onclick="shiftCatalogSectionSlide('${item.id}', 1)" title="Next set">›</button>` : '') + `
+                                ` + dotsHtml + `
+                            </div>
 
-                                <div style="width: 100%; position: relative; display: block; margin-top: 4px;">
-                                    <button type="button" class="catalog-arrow-btn" onclick="shiftCatalogSectionSlide('${item.id}', -1)" style="position: absolute; left: -13px; top: 50%; transform: translateY(-50%); background: rgba(22, 25, 37, 0.85); border: 1px solid #2d3142; color: #10b981; font-weight: bold; cursor: pointer; width: 26px; height: 32px; border-radius: 4px; display: ${availableSections.length <= 1 ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 0.75rem; user-select: none; z-index: 100;">◀</button>
-                                    
-                                    <div id="catalog-display-canvas-${item.id}" class="catalog-multi-images-grid rich-text-wrapper" style="width: 100%; aspect-ratio: 1 / 1 !important; height: auto; margin: 0; position: relative;">
-                                        ${initialHtmlView}
-                                    </div>
-                                    
-                                    <button type="button" class="catalog-arrow-btn" onclick="shiftCatalogSectionSlide('${item.id}', 1)" style="position: absolute; right: -13px; top: 50%; transform: translateY(-50%); background: rgba(22, 25, 37, 0.85); border: 1px solid #2d3142; color: #10b981; font-weight: bold; cursor: pointer; width: 26px; height: 32px; border-radius: 4px; display: ${availableSections.length <= 1 ? 'none' : 'flex'}; align-items: center; justify-content: center; font-size: 0.75rem; user-select: none; z-index: 100;">▶</button>
-                                </div>
+                            <div class="cat-body">
+                                <div class="cat-title" title="${escDesc}">${escDesc}</div>
+                                <div class="cat-price"><span>Starting at</span><strong>$${item.price}</strong></div>
+                            </div>
 
-                                <div style="font-size: 0.9rem; color: #ffffff; line-height: 1.4; text-align: center; font-weight: bold; margin-top: 2px; width: 100%;">${item.desc}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2d3142; padding-top: 10px; margin-top: 4px; width: 100%;">
-                                    <div style="display: flex; align-items: center; gap: 6px;">
-                                        <span style="font-size: 0.75rem; color: var(--text-muted);">STARTING AT</span>
-                                        <strong style="color: var(--accent-green); font-size: 1.1rem;">$${item.price}</strong>
-                                    </div>
-                                    <button type="button" onclick="openOrderSummaryModal('${item.id}')" style="background: var(--accent-green); color: black; border: none; padding: 4px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Order</button>
-                                </div>
+                            <div class="cat-actions">
+                                <button type="button" class="cat-order" onclick="openOrderSummaryModal('${item.id}')">Order</button>
                             </div>
                         </div>
                     `;
@@ -1538,7 +1720,7 @@
                                 localReadRegistry['last_read_time_' + selectedText] = currentTimestampValue;
                             }
 
-                            await Neutralino.storage.setData('equipdex_read_checkpoint', JSON.stringify(localReadRegistry));
+                            await ddWriteCheckpoint(JSON.stringify(localReadRegistry));
                         } else {
 
                             localStorage.setItem('last_read_time_' + selectedText, currentTimestampValue);
@@ -2006,6 +2188,11 @@
                 
                 if (textLabel && selectedSection) {
                     textLabel.innerHTML = selectedSection.label;
+                }
+
+                const dotsEl = document.getElementById('catalog-dots-' + catalogId);
+                if (dotsEl) {
+                    Array.from(dotsEl.children).forEach((d, i) => d.classList.toggle('on', i === currentActiveIdx));
                 }
 
             } catch (error) {
