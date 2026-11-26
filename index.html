@@ -1485,92 +1485,28 @@
                     return;
                 }
 
-                container.style.gridTemplateColumns = "repeat(5, minmax(0, 1fr))";
+                container.style.gridTemplateColumns = "repeat(auto-fill, minmax(230px, 1fr))";
                 container.style.gap = "20px";
 
+                const catalogCardsHtml = [];
                 globalCatalogDatabase.forEach((item) => {
-                    const availableSections = [];
-                    if (item.sections) {
-                        if (item.sections.female && item.sections.female.length > 0) availableSections.push({ key: 'female', label: 'Female Sample' });
-                        if (item.sections.male && item.sections.male.length > 0) availableSections.push({ key: 'male', label: 'Male Sample' });
-                        if (item.sections.couple && item.sections.couple.length > 0) availableSections.push({ key: 'couple', label: 'Couple Sample' });
-                    }
-                    
-                    if (availableSections.length === 0) {
-                        availableSections.push({ key: 'default', label: 'Sample' });
-                    }
+                    const sectionList = getCatalogSectionList(item);
+                    const multi = sectionList.length > 1;
+                    const firstSection = sectionList[0];
+                    const initialHtmlView = buildCatalogGridHtml(item.id, firstSection.key, firstSection.images);
+                    const initialLabel = firstSection.label;
 
-                    function compileSectionalGridHtml(imagesArray) {
-                        if (!imagesArray || imagesArray.length === 0) return '';
-                        const totalCount = imagesArray.length;
-                        const visibleCount = Math.min(totalCount, 5);
-                        
-                        let gridClassType = "gallery-matrix-" + visibleCount;
-
-                        const encodedPhotoArray = btoa(JSON.stringify(imagesArray));
-
-                        let rowOverrideStyle = "";
-                        if (visibleCount === 4) {
-                            rowOverrideStyle = " grid-template-columns: 3fr 1fr !important; grid-template-rows: repeat(3, 1fr) !important;";
-                        } else if (visibleCount === 2) {
-
-                            rowOverrideStyle = " grid-template-columns: 1fr 1fr !important; grid-template-rows: 1fr !important;";
-                        }
-
-                        let htmlGrid = '<div class="' + gridClassType + '" style="width: 100%; height: 100% !important; margin: 0; border: none; border-radius: 0; display: grid; background-color: #0b0d14; gap: 4px !important;' + rowOverrideStyle + '">';
-                        for (let i = 0; i < visibleCount; i++) {
-                            const imgSrc = imagesArray[i];
-                            const isLastItem = (i === 4 && totalCount > 5);
-                            const remainingCount = totalCount - 5;
-                            let badgeHtmlOutput = isLastItem ? '<div class="matrix-overlay-badge" style="font-size: 1.5rem; font-weight: bold;">+' + remainingCount + '</div>' : '';
-
-                            let childStyle = "height: 100% !important;";
-                            if (visibleCount === 4) {
-                                childStyle = "height: auto !important; min-height: 0 !important; max-height: 100% !important;";
-                            }
-                            htmlGrid += 
-                                '<div class="matrix-thumb-box" style="background-image: url(\'' + imgSrc + '\'); ' + childStyle + '" onclick="launchDirectCatalogLightbox(' + i + ', \'' + encodedPhotoArray + '\')">' +
-                                    badgeHtmlOutput +
-                                '</div>';
-                        }
-                        htmlGrid += '</div>';
-
-                        let hiddenVault = '<div class="lightbox-hidden-vault-data" style="display: none !important;">';
-                        imagesArray.forEach(src => { hiddenVault += '<img src="' + src + '" alt="Media">'; });
-                        hiddenVault += '</div>';
-
-                        return htmlGrid + hiddenVault;
-                    }
-
-                    let structuralGridsMap = {
-                        female: item.sections && item.sections.female && item.sections.female.length > 0 ? compileSectionalGridHtml(item.sections.female) : '',
-                        male: item.sections && item.sections.male && item.sections.male.length > 0 ? compileSectionalGridHtml(item.sections.male) : '',
-                        couple: item.sections && item.sections.couple && item.sections.couple.length > 0 ? compileSectionalGridHtml(item.sections.couple) : ''
-                    };
-
-                    if (!structuralGridsMap.female && !structuralGridsMap.male && !structuralGridsMap.couple) {
-                        const fallbackArr = Array.isArray(item.img) ? item.img : [item.img];
-                        structuralGridsMap.default = compileSectionalGridHtml(fallbackArr);
-                    }
-
-                    const gridsJsonDataAttr = btoa(JSON.stringify(structuralGridsMap));
-                    const sectionsJsonDataAttr = btoa(JSON.stringify(item.sections || { default: Array.isArray(item.img) ? item.img : [item.img] }));
-                    
-                    let initialHtmlView = structuralGridsMap.female || structuralGridsMap.male || structuralGridsMap.couple || structuralGridsMap.default;
-                    let initialLabel = availableSections.length > 0 ? availableSections[0].label : 'Sample';
-
-                    const multi = availableSections.length > 1;
                     const escDesc = String(item.desc || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     const dotsHtml = multi
-                        ? '<div class="cat-dots" id="catalog-dots-' + item.id + '">' + availableSections.map((s, i) => '<span class="' + (i === 0 ? 'on' : '') + '"></span>').join('') + '</div>'
+                        ? '<div class="cat-dots" id="catalog-dots-' + item.id + '">' + sectionList.map((s, i) => '<span class="' + (i === 0 ? 'on' : '') + '"></span>').join('') + '</div>'
                         : '';
                     const ribbonHtml = item.baseDiscount > 0 ? '<div class="cat-ribbon">-' + item.baseDiscount + '%</div>' : '';
 
-                    container.innerHTML += `
-                        <div class="cat-card" id="card-catalog-${item.id}" data-sections="${sectionsJsonDataAttr}" data-grids="${gridsJsonDataAttr}" data-active-idx="0">
+                    catalogCardsHtml.push(`
+                        <div class="cat-card" id="card-catalog-${item.id}" data-active-idx="0">
                             <div class="cat-media">
                                 <div id="catalog-display-canvas-${item.id}" class="catalog-multi-images-grid rich-text-wrapper cat-canvas">
-                                    ${initialHtmlView}
+                                    ` + initialHtmlView + `
                                 </div>
                                 <span id="catalog-label-indicator-${item.id}" class="cat-pill">${initialLabel}</span>
                                 ` + ribbonHtml + `
@@ -1588,8 +1524,9 @@
                                 <button type="button" class="cat-order" onclick="openOrderSummaryModal('${item.id}')">Order</button>
                             </div>
                         </div>
-                    `;
+                    `);
                 });
+                container.innerHTML = catalogCardsHtml.join('');
                 return;
             } else {
                 container.style.gridTemplateColumns = "repeat(3, 1fr)";
@@ -1929,7 +1866,11 @@
             const thumbsContainer = document.getElementById('lightbox-thumbnails-row-wrapper');
             if (!mainImgTarget || !thumbsContainer) return;
 
+            lbEnsureZoomUi();
+            resetLightboxZoomState();
             mainImgTarget.src = lightboxImagesCollection[currentLightboxActiveIndex];
+            lbPrepareImage(lightboxImagesCollection[currentLightboxActiveIndex]);
+            if (window.HQThumbs) HQThumbs.upgradeLightbox(mainImgTarget, lightboxImagesCollection[currentLightboxActiveIndex]);
 
             const prevBtn = document.getElementById('lightbox-prev-btn');
             const nextBtn = document.getElementById('lightbox-next-btn');
@@ -2011,47 +1952,206 @@
             else if (e.key === "Escape") closeGlobalLightbox();
         });
 
+        // ===== Lightbox zoom / pan engine =====
+        // Click = zoom in by LB_STEP (x2.5) per click, capped at the image's own max; click at max = back to fit.
+        // Max zoom adapts to image size: an image whose longest side is LB_REF_PX (2121px) reaches LB_REF_ZOOM (500%).
+        // Bigger images go higher, smaller ones lower (clamped to LB_MIN_MAX..LB_MAX_MAX).
+        const LB_STEP = 2.5;
+        const LB_REF_PX = 2121;
+        const LB_REF_ZOOM = 5;
+        const LB_MIN_MAX = 2;
+        const LB_MAX_MAX = 8;
+
         let isLightboxZoomedActive = false;
+        const lbZoom = { s: 1, x: 0, y: 0, src: '', natW: 0, natH: 0, moved: false, pointers: new Map(), lastDist: 0, lastMid: null };
+
+        function lbImg() { return document.getElementById('lightbox-main-img-target'); }
+        function lbWrap() { const i = lbImg(); return i ? i.parentElement : null; }
+
+        function lbMaxScale() {
+            let w = lbZoom.natW, h = lbZoom.natH;
+            if (!w) { const i = lbImg(); w = i ? i.naturalWidth : 0; h = i ? i.naturalHeight : 0; }
+            const side = Math.max(w, h);
+            if (!side) return 3;
+            const m = LB_REF_ZOOM * side / LB_REF_PX;
+            return Math.round(Math.min(LB_MAX_MAX, Math.max(LB_MIN_MAX, m)) * 4) / 4;
+        }
+
+        function lbPrepareImage(src) {
+            lbZoom.src = src; lbZoom.natW = 0; lbZoom.natH = 0;
+            if (!src) return;
+            const probe = new Image();
+            probe.onload = function () {
+                if (lbZoom.src !== src) return;
+                lbZoom.natW = probe.naturalWidth; lbZoom.natH = probe.naturalHeight;
+                lbUpdateHud();
+            };
+            probe.src = src;
+        }
+
+        // The lightbox normally shows a screen-sized downscale (HQThumbs). While zoomed we need the full-resolution original.
+        function lbEnsureOriginal() {
+            const img = lbImg(), src = lbZoom.src;
+            if (!img || !src) return;
+            img.__hqTok = (img.__hqTok || 0) + 1;      // cancel any pending downscale swap
+            if (img.src === src) return;
+            const p = new Image();
+            p.src = src;
+            const done = function () {
+                if (lbZoom.src === src && lbZoom.s > 1) { img.__hqTok = (img.__hqTok || 0) + 1; img.src = src; }
+            };
+            if (p.decode) p.decode().then(done, done); else p.onload = done;
+        }
+
+        function lbRestoreFit() {
+            const img = lbImg();
+            if (img && lbZoom.src && window.HQThumbs) HQThumbs.upgradeLightbox(img, lbZoom.src);
+        }
+
+        function lbUpdateHud() {
+            const lvl = document.getElementById('lightbox-zoom-level');
+            const btn = document.getElementById('lightbox-zoom-reset');
+            const hint = document.getElementById('lightbox-zoom-hint');
+            if (!lvl) return;
+            const zoomed = lbZoom.s > 1;
+            lvl.textContent = Math.round(lbZoom.s * 100) + '% / ' + Math.round(lbMaxScale() * 100) + '%';
+            if (btn) btn.style.display = zoomed ? 'inline-block' : 'none';
+            if (hint) hint.textContent = zoomed ? 'Drag to pan \u00b7 scroll to zoom' : 'Scroll or click to zoom';
+        }
+
+        function lbApply(animate) {
+            const img = lbImg(), wrap = lbWrap();
+            if (!img || !wrap) return;
+            const l = lbZoom;
+            if (l.s <= 1.001) { l.s = 1; l.x = 0; l.y = 0; }
+            else {
+                const limX = Math.max(0, (img.offsetWidth * l.s - wrap.clientWidth) / 2);
+                const limY = Math.max(0, (img.offsetHeight * l.s - wrap.clientHeight) / 2);
+                l.x = Math.min(limX, Math.max(-limX, l.x));
+                l.y = Math.min(limY, Math.max(-limY, l.y));
+            }
+            img.style.transition = animate ? 'transform 0.2s ease-out' : 'none';
+            img.style.transformOrigin = 'center center';
+            img.style.transform = l.s === 1 ? 'none' : 'translate(' + l.x + 'px, ' + l.y + 'px) scale(' + l.s + ')';
+            img.classList.toggle('zoomed-active', l.s > 1);
+            isLightboxZoomedActive = l.s > 1;
+            lbUpdateHud();
+        }
+
+        // Zoom to newS keeping the point under (cx, cy) (screen coords) fixed.
+        function lbZoomAt(newS, cx, cy, animate) {
+            const img = lbImg(), wrap = lbWrap();
+            if (!img || !wrap) return;
+            const l = lbZoom;
+            newS = Math.min(lbMaxScale(), Math.max(1, newS));
+            if (newS > 1 && l.s === 1) lbEnsureOriginal();
+            const r = wrap.getBoundingClientRect();
+            const dx = (cx === undefined ? 0 : cx - (r.left + r.width / 2));
+            const dy = (cy === undefined ? 0 : cy - (r.top + r.height / 2));
+            const k = newS / l.s;
+            l.x = dx - (dx - l.x) * k;
+            l.y = dy - (dy - l.y) * k;
+            const wasZoomed = l.s > 1;
+            l.s = newS;
+            lbApply(animate);
+            if (wasZoomed && l.s === 1) lbRestoreFit();
+        }
 
         function toggleLightboxZoomEngine(event) {
-            if (event) event.stopPropagation(); 
-            
-            const mainImg = document.getElementById('lightbox-main-img-target');
-            if (!mainImg) return;
-
-            isLightboxZoomedActive = !isLightboxZoomedActive;
-
-            if (isLightboxZoomedActive) {
-                mainImg.classList.add('zoomed-active');
-
-                handleLightboxZoomPan(event);
-            } else {
-                resetLightboxZoomState();
-            }
+            if (event) event.stopPropagation();
+            if (lbZoom.moved) { lbZoom.moved = false; return; }   // that was a drag/pinch, not a click
+            const max = lbMaxScale();
+            const cx = event ? event.clientX : undefined, cy = event ? event.clientY : undefined;
+            if (lbZoom.s >= max - 0.01) lbZoomAt(1, cx, cy, true);
+            else lbZoomAt(Math.min(max, lbZoom.s * LB_STEP), cx, cy, true);
         }
 
-        function handleLightboxZoomPan(event) {
-            if (!isLightboxZoomedActive) return;
-
-            const mainImg = document.getElementById('lightbox-main-img-target');
-            if (!mainImg) return;
-
-            const rect = mainImg.getBoundingClientRect();
-            
-            const mouseXPercent = ((event.clientX - rect.left) / rect.width) * 100;
-            const mouseYPercent = ((event.clientY - rect.top) / rect.height) * 100;
-
-            mainImg.style.transformOrigin = `${mouseXPercent}% ${mouseYPercent}%`;
-        }
+        function handleLightboxZoomPan() { /* superseded by pointer-based panning */ }
 
         function resetLightboxZoomState() {
-            const mainImg = document.getElementById('lightbox-main-img-target');
-            if (!mainImg) return;
-
-            isLightboxZoomedActive = false;
-            mainImg.classList.remove('zoomed-active');
-            mainImg.style.transformOrigin = "center center";
+            const l = lbZoom, wasZoomed = l.s > 1;
+            l.s = 1; l.x = 0; l.y = 0; l.moved = false; l.pointers.clear(); l.lastDist = 0; l.lastMid = null;
+            lbApply(false);
+            if (wasZoomed) lbRestoreFit();
         }
+
+        function lbEnsureZoomUi() {
+            const img = lbImg();
+            if (!img || img.__lbBound) return;
+            img.__lbBound = true;
+            const wrap = img.parentElement, host = wrap.parentElement;
+            img.draggable = false;
+            img.addEventListener('dragstart', function (e) { e.preventDefault(); });
+
+            img.addEventListener('pointerdown', function (e) {
+                const l = lbZoom;
+                if (l.pointers.size === 0) l.moved = false;
+                l.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY });
+                try { img.setPointerCapture(e.pointerId); } catch (_) {}
+                if (l.pointers.size === 2) {
+                    const v = Array.from(l.pointers.values());
+                    l.moved = true;
+                    l.lastDist = Math.hypot(v[0].x - v[1].x, v[0].y - v[1].y);
+                    l.lastMid = { x: (v[0].x + v[1].x) / 2, y: (v[0].y + v[1].y) / 2 };
+                }
+                if (l.s > 1) img.classList.add('lb-grabbing');
+            });
+
+            img.addEventListener('pointermove', function (e) {
+                const l = lbZoom, p = l.pointers.get(e.pointerId);
+                if (!p) return;
+                const dx = e.clientX - p.x, dy = e.clientY - p.y;
+                p.x = e.clientX; p.y = e.clientY;
+                if (Math.hypot(e.clientX - p.sx, e.clientY - p.sy) > 5) l.moved = true;
+                if (l.pointers.size === 2) {
+                    const v = Array.from(l.pointers.values());
+                    const dist = Math.hypot(v[0].x - v[1].x, v[0].y - v[1].y);
+                    const mid = { x: (v[0].x + v[1].x) / 2, y: (v[0].y + v[1].y) / 2 };
+                    if (l.lastDist) lbZoomAt(l.s * dist / l.lastDist, mid.x, mid.y, false);
+                    if (l.lastMid) { l.x += mid.x - l.lastMid.x; l.y += mid.y - l.lastMid.y; lbApply(false); }
+                    l.lastDist = dist; l.lastMid = mid;
+                } else if (l.pointers.size === 1 && l.s > 1) {
+                    l.x += dx; l.y += dy;
+                    lbApply(false);
+                }
+            });
+
+            const endPointer = function (e) {
+                const l = lbZoom;
+                l.pointers.delete(e.pointerId);
+                try { img.releasePointerCapture(e.pointerId); } catch (_) {}
+                if (l.pointers.size < 2) { l.lastDist = 0; l.lastMid = null; }
+                if (l.pointers.size === 0) img.classList.remove('lb-grabbing');
+            };
+            img.addEventListener('pointerup', endPointer);
+            img.addEventListener('pointercancel', endPointer);
+
+            wrap.addEventListener('wheel', function (e) {
+                e.preventDefault();
+                let k = Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : (e.ctrlKey ? 0.01 : 0.0015)));
+                k = Math.min(2, Math.max(0.5, k));
+                lbZoomAt(lbZoom.s * k, e.clientX, e.clientY, false);
+            }, { passive: false });
+
+            const hud = document.createElement('div');
+            hud.id = 'lightbox-zoom-hud';
+            hud.innerHTML = '<span id="lightbox-zoom-level">100%</span><span id="lightbox-zoom-hint"></span><button type="button" id="lightbox-zoom-reset" title="Fit to screen">Fit</button>';
+            host.appendChild(hud);
+            hud.addEventListener('click', function (e) { e.stopPropagation(); });
+            document.getElementById('lightbox-zoom-reset').addEventListener('click', function (e) {
+                e.stopPropagation();
+                lbZoomAt(1, undefined, undefined, true);
+            });
+            lbUpdateHud();
+        }
+
+        document.addEventListener('keydown', function (e) {
+            const modal = document.getElementById('global-lightbox-modal');
+            if (!modal || modal.style.display === 'none') return;
+            if (e.key === '+' || e.key === '=') lbZoomAt(lbZoom.s * LB_STEP, undefined, undefined, true);
+            else if (e.key === '-' || e.key === '_') lbZoomAt(lbZoom.s / LB_STEP, undefined, undefined, true);
+            else if (e.key === '0') lbZoomAt(1, undefined, undefined, true);
+        });
 
         function renderPublicSocialMediaTray(socialDataPacket) {
             const trayContainer = document.getElementById('public-social-tray-wrapper');
@@ -2147,21 +2247,53 @@
             });
         }
 
+        // Ordered list of image sections for a catalog item (female / male / couple, or a default fallback).
+        function getCatalogSectionList(item) {
+            const list = [];
+            const s = item.sections;
+            if (s) {
+                if (s.female && s.female.length > 0) list.push({ key: 'female', label: 'Female Sample', images: s.female });
+                if (s.male && s.male.length > 0) list.push({ key: 'male', label: 'Male Sample', images: s.male });
+                if (s.couple && s.couple.length > 0) list.push({ key: 'couple', label: 'Couple Sample', images: s.couple });
+            }
+            if (list.length === 0) {
+                const fallback = (Array.isArray(item.img) ? item.img : [item.img]).filter(Boolean);
+                list.push({ key: 'default', label: 'Sample', images: fallback });
+            }
+            return list;
+        }
+
+        function getCatalogItemById(catalogId) {
+            const db = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData : [];
+            return db.find(i => String(i.id) === String(catalogId));
+        }
+
+        // Each image's data is written ONCE (in its own thumbnail); the lightbox looks the list up on click.
+        function buildCatalogGridHtml(catalogId, sectionKey, imagesArray) {
+            if (!imagesArray || imagesArray.length === 0) return '';
+            const totalCount = imagesArray.length;
+            const visibleCount = Math.min(totalCount, 5);
+            let htmlGrid = '<div class="catalog-multi-images-grid gallery-matrix-' + visibleCount + '" style="width: 100%; height: 100% !important; margin: 0; border: none; border-radius: 0; background-color: #0b0d14;">';
+            for (let i = 0; i < visibleCount; i++) {
+                const isLastItem = (i === 4 && totalCount > 5);
+                const badge = isLastItem ? '<div class="matrix-overlay-badge" style="font-size: 1.5rem; font-weight: bold;">+' + (totalCount - 5) + '</div>' : '';
+                htmlGrid +=
+                    '<div class="matrix-thumb-box" style="background-image: url(\'' + imagesArray[i] + '\'); height: 100% !important; position: relative;" onclick="launchDirectCatalogLightbox(' + i + ', \'' + catalogId + '\', \'' + sectionKey + '\')">' +
+                        badge +
+                    '</div>';
+            }
+            return htmlGrid + '</div>';
+        }
+
         function shiftCatalogSectionSlide(catalogId, directionModifier) {
             const cardEl = document.getElementById('card-catalog-' + catalogId);
             if (!cardEl) return;
 
             try {
-                const rawSectionsData = JSON.parse(atob(cardEl.getAttribute('data-sections')));
-                
-                const activeKeysMap = [];
-                if (rawSectionsData.female && rawSectionsData.female.length > 0) activeKeysMap.push({ key: 'female', label: 'Female Sample' });
-                if (rawSectionsData.male && rawSectionsData.male.length > 0) activeKeysMap.push({ key: 'male', label: 'Male Sample' });
-                if (rawSectionsData.couple && rawSectionsData.couple.length > 0) activeKeysMap.push({ key: 'couple', label: 'Couple Sample' });
-                
-                if (activeKeysMap.length === 0) {
-                    activeKeysMap.push({ key: 'default', label: 'Sample' });
-                }
+                const item = getCatalogItemById(catalogId);
+                if (!item) return;
+
+                const activeKeysMap = getCatalogSectionList(item);
 
                 let currentActiveIdx = parseInt(cardEl.getAttribute('data-active-idx'), 10) || 0;
                 currentActiveIdx += directionModifier;
@@ -2175,17 +2307,16 @@
                 cardEl.setAttribute('data-active-idx', currentActiveIdx);
 
                 const selectedSection = activeKeysMap[currentActiveIdx];
-                const rawGridsCache = JSON.parse(atob(cardEl.getAttribute('data-grids')));
-                const targetGridHtmlMarkup = rawGridsCache[selectedSection.key];
+                const targetGridHtmlMarkup = buildCatalogGridHtml(catalogId, selectedSection.key, selectedSection.images);
 
                 const canvasContainer = document.getElementById('catalog-display-canvas-' + catalogId);
                 const textLabel = document.getElementById('catalog-label-indicator-' + catalogId);
 
                 if (canvasContainer && targetGridHtmlMarkup) {
                     canvasContainer.innerHTML = targetGridHtmlMarkup;
-                    resetLightboxZoomState(); 
+                    resetLightboxZoomState();
                 }
-                
+
                 if (textLabel && selectedSection) {
                     textLabel.innerHTML = selectedSection.label;
                 }
@@ -2200,12 +2331,15 @@
             }
         }
 
-        function launchDirectCatalogLightbox(targetPhotoIdx, base64EncodedImageArray) {
+        function launchDirectCatalogLightbox(targetPhotoIdx, catalogId, sectionKey) {
             try {
-                const activeImagesPool = JSON.parse(atob(base64EncodedImageArray));
+                const item = getCatalogItemById(catalogId);
+                if (!item) return;
+                const section = getCatalogSectionList(item).find(s => s.key === sectionKey);
+                const activeImagesPool = section ? section.images : [];
                 if (!activeImagesPool || activeImagesPool.length === 0) return;
 
-                lightboxImagesCollection = activeImagesPool;
+                lightboxImagesCollection = activeImagesPool.slice();
                 currentLightboxActiveIndex = targetPhotoIdx;
 
                 const modalElement = document.getElementById('global-lightbox-modal');
@@ -2214,7 +2348,7 @@
                 }
 
                 syncLightboxActiveImageState();
-                
+
                 const mainImgTarget = document.getElementById('lightbox-main-img-target');
                 if (mainImgTarget) {
                     mainImgTarget.style.height = "auto";
@@ -2479,7 +2613,7 @@
             <button type="button" id="lightbox-prev-btn" onclick="navigateLightboxImage(-1, event)" style="position: absolute; left: 15px; background: rgba(30, 32, 44, 0.7); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); width: 42px; height: 42px; border-radius: 50%; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 100000000;" title="Previous Image">&lt;</button>
             
             <div id="lightbox-main-img-target-wrapper">
-                <img id="lightbox-main-img-target" src="" onclick="toggleLightboxZoomEngine(event)" onmousemove="handleLightboxZoomPan(event)" onmouseleave="resetLightboxZoomState()" alt="Full View">
+                <img id="lightbox-main-img-target" src="" onclick="toggleLightboxZoomEngine(event)" alt="Full View">
             </div>
             
             <button type="button" id="lightbox-next-btn" onclick="navigateLightboxImage(1, event)" style="position: absolute; right: 15px; background: rgba(30, 32, 44, 0.7); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); width: 42px; height: 42px; border-radius: 50%; font-size: 1.1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 100000000;" title="Next Image">&gt;</button>
@@ -2523,16 +2657,18 @@
             transition: transform 0.2s ease-out;
             transform-origin: center center;
             will-change: transform;
+            touch-action: none;
             box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             border: 1px solid #232738;
             border-radius: 4px;
         }
 
-        #lightbox-main-img-target.zoomed-active {
-            cursor: zoom-out; 
-            transform: scale(1.5); 
-            border-radius: 0px; 
-        }
+        #lightbox-main-img-target.zoomed-active { cursor: grab; border-radius: 0px; }
+        #lightbox-main-img-target.lb-grabbing { cursor: grabbing !important; }
+        #lightbox-zoom-hud { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: rgba(16,18,28,0.82); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 5px 12px; font-size: 0.75rem; z-index: 100000000; pointer-events: none; white-space: nowrap; }
+        #lightbox-zoom-level { font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+        #lightbox-zoom-reset { display: none; pointer-events: auto; cursor: pointer; background: rgba(30,32,44,0.9); color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 999px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+
 
         .social-tray-icon-item {
             width: 32px;
@@ -2635,5 +2771,164 @@
         </div>
     </div>
 
+    <script>
+    /* HQThumbs: high-quality previews for heavy line-art / halftone images.
+       Browsers downscale big images in one step, which aliases halftone dots into
+       moire/noise. This re-samples each preview to its real on-screen size using
+       progressive halving (area-average), so dots blend into clean tones. */
+    (function () {
+        'use strict';
+        var SEL = '.matrix-thumb-box, .lightbox-thumb-item';
+        var cache = new Map();   // src|width -> Promise<blobUrl>
+        var dims = new Map();    // src -> {w, h}
+        var queue = [], active = 0, MAX_ACTIVE = 2;
+
+        function pump() {
+            while (active < MAX_ACTIVE && queue.length) {
+                var job = queue.shift();
+                active++;
+                job().catch(function () {}).then(function () { active--; pump(); });
+            }
+        }
+        function enqueue(job) { queue.push(job); pump(); }
+
+        function urlOf(el) {
+            var s = (el.style.backgroundImage || '').trim();
+            if (s.indexOf('url(') !== 0) return null;
+            s = s.slice(4, -1).trim();
+            if (s.charAt(0) === '"' || s.charAt(0) === "'") s = s.slice(1, -1);
+            return s || null;
+        }
+        function load(src) {
+            return new Promise(function (resolve, reject) {
+                var im = new Image();
+                im.decoding = 'async';
+                im.onload = function () { resolve(im); };
+                im.onerror = reject;
+                im.src = src;
+            });
+        }
+        function makeThumb(im, tw, th) {
+            var cur = im, cw = im.naturalWidth, ch = im.naturalHeight;
+            while (cw > tw * 2) {                       // halve until within 2x of target
+                var nw = Math.ceil(cw / 2), nh = Math.ceil(ch / 2);
+                var c = document.createElement('canvas');
+                c.width = nw; c.height = nh;
+                var x = c.getContext('2d');
+                x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
+                x.drawImage(cur, 0, 0, nw, nh);
+                cur = c; cw = nw; ch = nh;
+            }
+            var out = document.createElement('canvas');
+            out.width = tw; out.height = th;
+            var ox = out.getContext('2d');
+            ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
+            ox.drawImage(cur, 0, 0, tw, th);
+            return new Promise(function (resolve, reject) {
+                out.toBlob(function (b) { b ? resolve(URL.createObjectURL(b)) : reject(new Error('toBlob')); }, 'image/webp', 0.95);
+            });
+        }
+        function getThumb(src, im, tw, th) {
+            var key = src + '|' + tw;
+            var p = cache.get(key);
+            if (!p) {
+                p = (im ? Promise.resolve(im) : load(src)).then(function (i) { return makeThumb(i, tw, th); });
+                p.catch(function () { cache.delete(key); });
+                cache.set(key, p);
+            }
+            return p;
+        }
+        function bucket(w, s) { return Math.min(w, Math.ceil(w * s / 64) * 64); }
+        function dpr() { return Math.min(window.devicePixelRatio || 1, 2.5); }
+
+        function restore(el) {
+            if (el.__hqSrc) el.style.backgroundImage = "url('" + el.__hqSrc + "')";
+            el.__hqState = 'orig';
+        }
+        function render(el) {
+            var src = el.__hqSrc;
+            if (!el.isConnected) return Promise.resolve();
+            var r = el.getBoundingClientRect();
+            if (!r.width || !r.height) { restore(el); el.__hqState = 'retry'; return Promise.resolve(); }
+            var contain = (getComputedStyle(el).backgroundSize || '').indexOf('contain') >= 0;
+            var im = null;
+            var d = dims.get(src);
+            var step = d ? Promise.resolve(d) : load(src).then(function (i) {
+                im = i; d = { w: i.naturalWidth, h: i.naturalHeight }; dims.set(src, d); return d;
+            });
+            return step.then(function (d) {
+                if (!el.isConnected) return;
+                var s = (contain ? Math.min(r.width / d.w, r.height / d.h) : Math.max(r.width / d.w, r.height / d.h)) * dpr();
+                if (s >= 0.8) { restore(el); return; }            // no real downscale needed
+                var tw = bucket(d.w, s), th = Math.max(1, Math.round(d.h * tw / d.w));
+                if (el.__hqW && tw <= el.__hqW) { el.__hqState = 'done'; return; }        // already have enough resolution
+                return getThumb(src, im, tw, th).then(function (url) {
+                    if (!el.isConnected) return;
+                    el.style.backgroundImage = "url('" + url + "')";
+                    el.__hqW = tw; el.__hqState = 'done';
+                });
+            }).catch(function () { restore(el); });
+        }
+        function scan() {
+            var list = document.querySelectorAll(SEL);
+            for (var i = 0; i < list.length; i++) {
+                var el = list[i];
+                if (el.__hqState === 'retry' || el.__hqState === undefined) {
+                    if (el.__hqState === undefined) {
+                        var src = urlOf(el);
+                        if (!src) { el.__hqState = 'skip'; continue; }
+                        el.__hqSrc = src;
+                        el.style.backgroundImage = 'none';       // hide un-filtered original right away
+                    }
+                    el.__hqState = 'pending';
+                    (function (e) { enqueue(function () { return render(e); }); })(el);
+                }
+            }
+        }
+        var obs = new MutationObserver(scan);
+        function start() {
+            obs.observe(document.body, { childList: true, subtree: true });
+            scan();
+        }
+        if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+
+        var rt;
+        window.addEventListener('resize', function () {
+            clearTimeout(rt);
+            rt = setTimeout(function () {
+                var list = document.querySelectorAll(SEL);
+                for (var i = 0; i < list.length; i++) {
+                    var e = list[i];
+                    if (e.__hqSrc && (e.__hqState === 'done' || e.__hqState === 'orig')) {
+                        e.__hqState = 'pending';
+                        (function (x) { enqueue(function () { return render(x); }); })(e);
+                    }
+                }
+            }, 250);
+        });
+
+        // Lightbox main image: swap in a version sized for the screen (incl. the 1.5x zoom).
+        function upgradeLightbox(img, src) {
+            if (!img || !src) return;
+            var tok = img.__hqTok = (img.__hqTok || 0) + 1;
+            var im = null;
+            var ready = img.decode ? img.decode().catch(function () {}) : Promise.resolve();
+            ready.then(function () {
+                if (img.__hqTok !== tok || !img.naturalWidth) return;
+                var r = img.getBoundingClientRect();
+                if (!r.width) return;
+                var nw = img.naturalWidth, nh = img.naturalHeight;
+                var s = (r.width / nw) * dpr() * 1.5;
+                if (s >= 0.85) return;
+                var tw = bucket(nw, s), th = Math.max(1, Math.round(nh * tw / nw));
+                return getThumb(src, null, tw, th).then(function (url) {
+                    if (img.__hqTok !== tok) return;
+                    img.src = url;
+                });
+            }).catch(function () {});
+        }
+        window.HQThumbs = { upgradeLightbox: upgradeLightbox, rescan: scan };
+    })();
+    </script>
 </body>
 </html>
