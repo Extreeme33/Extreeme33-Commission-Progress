@@ -83,7 +83,33 @@
                 "male": [],
                 "couple": []
             },
-            "lastUpdated": "2026-11-26T16:04:03.982Z"
+            "lastUpdated": "2026-11-26T16:04:03.982Z",
+            "priceTiers": [
+                {
+                    "name": "Full Body",
+                    "price": 10,
+                    "discount": 0,
+                    "allowQty": true
+                },
+                {
+                    "name": "Full Body (Detailed)",
+                    "price": 15,
+                    "discount": 0,
+                    "allowQty": true
+                },
+                {
+                    "name": "Additional Figure",
+                    "price": 15,
+                    "discount": 0,
+                    "allowQty": true
+                },
+                {
+                    "name": "Simple Background",
+                    "price": 10,
+                    "discount": 0,
+                    "allowQty": false
+                }
+            ]
         }
     ],
     "catalogRulesText": "Hi! Thank you for using my service! I really appreciate all of the support!<div>All of art style in this catalog section have deadline <font color=\"#ffea00\"><b>4 days</b></font>. <font color=\"#ff1744\"><b>Ordering</b></font> =<b><font color=\"#00e676\"> Agreed</font></b>.&nbsp;<br><br><b style=\"\"><font size=\"5\">== Rules ==</font></b><br><span style=\"font-size: 1.1rem;\">1. Unlimited Revision/Change. As long it is still either <font color=\"#ff1744\"><u>sketch </u></font>or&nbsp;<font color=\"#ff1744\"><u>lineart</u>.</font>&nbsp;Any change request past that, <font color=\"#00e5ff\"><u>I will charge you additional fee</u></font>.</span></div><div><span style=\"font-size: 1.1rem;\">2. Please keep in mind that with more change requested, that could </span><font color=\"#ff1744\" style=\"font-size: 1.1rem;\"><u>extend the deadline</u></font><span style=\"font-size: 1.1rem;\">. This rule also applied to 1 Day and 2 Day Request.</span><br><span style=\"font-size: 1.1rem;\">3. All the prices must be detailed using my pricing feature on catalog</span><br><span style=\"font-size: 1.1rem;\">4. All design request for either vtuber/adopt/game, </span><font color=\"#00e5ff\" style=\"font-size: 1.1rem;\"><u>I will charge you additional fee</u></font><span style=\"font-size: 1.1rem;\">. Because it will be used for commercial.&nbsp;</span><br><span style=\"font-size: 1.1rem;\">5. Respect me and I will respect you.</span><br><span style=\"font-size: 1.1rem;\">6. All details and reference must be discussed before placing the order.</span><br><span style=\"font-size: 1.1rem;\">7</span><br><br><b style=\"\"><font size=\"5\">== Payment ==<br></font></b>1. Payment will be done by <font color=\"#00e676\">\"Down Payment\"</font>. I will ask for first half after we both agreed with the sketch.<br>2. For the remaining payment, I show you the finished work progress. Then I will ask you to send the remaining payment before I send you the final file.<br><br><b><font size=\"5\">== What I Do ==<br></font></b><br><b><font size=\"5\">== What I Don't Do ==</font></b><br><br></div>",

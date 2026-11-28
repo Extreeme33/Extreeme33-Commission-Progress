@@ -2363,6 +2363,10 @@
 
         let currentActiveOrderCatalogItem = null;
 
+        function escOrderHtml(v) {
+            return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
         function openOrderSummaryModal(catalogId) {
             const globalCatalogDatabase = (window.equipdex_parsed_payload && window.equipdex_parsed_payload.catalogData) ? window.equipdex_parsed_payload.catalogData : [];
             const targetItem = globalCatalogDatabase.find(item => item.id === catalogId);
@@ -2370,55 +2374,68 @@
 
             currentActiveOrderCatalogItem = targetItem;
             document.getElementById('order-base-price-display').textContent = `$${targetItem.price}`;
-            
+            const serviceEl = document.getElementById('order-service-display');
+            if (serviceEl) serviceEl.textContent = targetItem.desc || 'Custom Art Commission';
+
             const container = document.getElementById('order-addons-container');
             container.innerHTML = "";
+            container.scrollTop = 0;
 
             const tiers = targetItem.priceTiers || [];
             if (tiers.length === 0) {
-                container.innerHTML = `<div style="text-align: center; color: #8b949e; padding: 10px; font-size: 0.8rem;">No optional addons available for this item.</div>`;
+                container.innerHTML = `<div class="os-empty">No optional addons available for this item.</div>`;
             } else {
-                tiers.forEach((tier, index) => {
+                container.innerHTML = tiers.map(tier => {
                     let priceTagHtml = `<span style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;">+$${tier.price}</span>`;
-                    
+
                     if (tier.price === 0 && tier.discount > 0) {
                         priceTagHtml = `<span style="font-size: 0.85rem; color: #ef4444; font-weight: 600;">-${tier.discount}% OFF</span>`;
-                    }
-
-                    else if (tier.price > 0 && tier.discount > 0) {
+                    } else if (tier.price > 0 && tier.discount > 0) {
                         const cellDiscounted = Math.round(tier.price * (1 - (tier.discount / 100)));
                         priceTagHtml = `
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <span style="font-size: 0.8rem; color: #ef4444; text-decoration: line-through; opacity: 0.6;">+$${tier.price}</span>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;">
+                                <span style="font-size: 0.72rem; color: #ef4444; text-decoration: line-through; opacity: 0.65;">+$${tier.price}</span>
                                 <span style="font-size: 0.85rem; color: var(--accent-green); font-weight: 600;">+$${cellDiscounted}</span>
-                            </div>
-                        `;
+                            </div>`;
                     }
 
-                    let qtyInputHtml = "";
-                    if (tier.allowQty) {
-                        qtyInputHtml = `
-                            <input type="number" class="order-addon-qty-input" value="1" min="1" max="99" onchange="calculateLiveOrderTotal()" oninput="calculateLiveOrderTotal()" style="width: 50px; background: #161925; border: 1px solid #2d3142; color: white; border-radius: 4px; padding: 2px 4px; font-size: 0.8rem; text-align: center; margin-left: 8px; outline: none;" onclick="event.stopPropagation();">
-                        `;
-                    }
+                    const qtyHtml = tier.allowQty ? `
+                        <span class="os-qty">
+                            <button type="button" class="os-qty-btn" onclick="stepOrderAddonQty(this, -1)" aria-label="Decrease quantity">−</button>
+                            <input type="number" class="order-addon-qty-input" value="1" min="1" max="99" inputmode="numeric" oninput="onOrderQtyInput(this, false)" onchange="onOrderQtyInput(this, true)">
+                            <button type="button" class="os-qty-btn" onclick="stepOrderAddonQty(this, 1)" aria-label="Increase quantity">+</button>
+                        </span>` : "";
 
-                    container.innerHTML += `
-                        <label style="display: flex; justify-content: space-between; align-items: center; background: #111420; border: 1px solid #232738; padding: 10px 12px; border-radius: 6px; cursor: pointer; user-select: none;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <input type="checkbox" class="order-addon-checkbox" data-price="${tier.price}" data-discount="${tier.discount || 0}" data-has-qty="${tier.allowQty ? 'true' : 'false'}" data-tier-name="${tier.name}" onchange="calculateLiveOrderTotal()" style="accent-color: var(--accent-green); cursor: pointer; width: 16px; height: 16px;">
-                                <div style="display: flex; align-items: center;">
-                                    <span style="font-size: 0.85rem; color: white;">${tier.name}</span>
-                                    ${qtyInputHtml}
-                                </div>
-                            </div>
-                            ${priceTagHtml}
-                        </label>
-                    `;
-                });
+                    return `
+                        <label class="os-row">
+                            <input type="checkbox" class="order-addon-checkbox" data-price="${tier.price}" data-discount="${tier.discount || 0}" data-has-qty="${tier.allowQty ? 'true' : 'false'}" data-tier-name="${escOrderHtml(tier.name)}" onchange="calculateLiveOrderTotal()">
+                            <span class="os-name">${escOrderHtml(tier.name)}</span>
+                            ${qtyHtml}
+                            <span class="os-price">${priceTagHtml}</span>
+                        </label>`;
+                }).join("");
             }
 
             calculateLiveOrderTotal();
             document.getElementById('order-summary-modal').style.display = "flex";
+        }
+
+        // +/- buttons: change quantity and make sure the add-on is ticked
+        function stepOrderAddonQty(btn, delta) {
+            const row = btn.closest('label');
+            const input = row.querySelector('.order-addon-qty-input');
+            const cb = row.querySelector('.order-addon-checkbox');
+            let v = parseInt(input.value, 10) || 1;
+            input.value = Math.min(99, Math.max(1, v + delta));
+            if (cb) cb.checked = true;
+            calculateLiveOrderTotal();
+        }
+
+        function onOrderQtyInput(input, isFinal) {
+            const cb = input.closest('label').querySelector('.order-addon-checkbox');
+            if (cb && !cb.checked && input.value !== '') cb.checked = true;
+            if (isFinal) input.value = Math.min(99, Math.max(1, parseInt(input.value, 10) || 1));
+            calculateLiveOrderTotal();
         }
 
         function closeOrderSummaryModal() {
@@ -2432,6 +2449,15 @@
             let subtotal = parseInt(currentActiveOrderCatalogItem.price, 10) || 0;
             let totalGlobalDiscountPercent = 0;
             const checkboxes = document.querySelectorAll('.order-addon-checkbox');
+
+            let selectedCount = 0;
+            checkboxes.forEach(cb => {
+                const row = cb.closest('label');
+                if (row) row.classList.toggle('is-checked', cb.checked);
+                if (cb.checked) selectedCount++;
+            });
+            const countEl = document.getElementById('order-selected-count');
+            if (countEl) countEl.textContent = selectedCount ? `${selectedCount} selected` : 'None selected';
 
             checkboxes.forEach(cb => {
                 if (cb.checked) {
@@ -2729,29 +2755,109 @@
         }
     </style>
 
-    <div id="order-summary-modal" onclick="if(event.target === this) closeOrderSummaryModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.85); z-index: 9999999; align-items: center; justify-content: center; font-family: sans-serif;">
-        <div style="background: #161925; border: 1px solid #232738; width: 100%; max-width: 430px; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 16px; color: white;">
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3142; padding-bottom: 10px;">
-                <strong style="font-size: 1.05rem; color: #ffffff;">Order Customization</strong>
-                <button type="button" onclick="closeOrderSummaryModal()" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 1.1rem; font-weight: bold;">✕</button>
+    <style>
+        /* ===== Order Customization modal (dark) ===== */
+        #order-summary-modal { color-scheme: dark; font-family: inherit; padding: 16px; box-sizing: border-box; }
+        #order-summary-modal .os-card {
+            background: #121521; border: 1px solid #232738; width: 100%; max-width: 440px; max-height: 100%;
+            border-radius: 16px; padding: 22px; box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; gap: 16px; color: #fff; box-sizing: border-box; overflow: hidden;
+        }
+        #order-summary-modal .os-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        #order-summary-modal .os-title { font-size: 1.15rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        #order-summary-modal .os-sub { margin-top: 4px; font-size: 0.8rem; color: #8b93a8; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #order-summary-modal .os-close {
+            flex: none; width: 30px; height: 30px; border-radius: 50%; border: 1px solid #2d3142; background: #1a1e2e;
+            color: #9aa3b8; cursor: pointer; font-size: 0.95rem; line-height: 1; transition: background .15s, color .15s;
+        }
+        #order-summary-modal .os-close:hover { background: #262b40; color: #fff; }
+        #order-summary-modal .os-base {
+            display: flex; justify-content: space-between; align-items: center; padding: 13px 16px;
+            background: linear-gradient(135deg, #171b2b, #11141f); border: 1px solid #232738; border-radius: 12px;
+        }
+        #order-summary-modal .os-base-label { font-size: 0.78rem; letter-spacing: .08em; text-transform: uppercase; color: #8b93a8; font-weight: 600; }
+        #order-summary-modal .os-base-value { font-size: 1.1rem; font-weight: 700; color: var(--accent-green); }
+        #order-summary-modal .os-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: -6px; }
+        #order-summary-modal .os-section span { font-size: 0.72rem; letter-spacing: .1em; text-transform: uppercase; color: #6f7790; font-weight: 700; }
+        #order-summary-modal .os-section #order-selected-count { text-transform: none; letter-spacing: 0; font-weight: 600; color: #8b93a8; font-size: 0.75rem; }
+
+        #order-addons-container {
+            display: flex; flex-direction: column; gap: 8px; max-height: min(46vh, 330px); overflow-y: auto; padding: 2px 6px 2px 0;
+            scrollbar-width: thin; scrollbar-color: #3a4160 transparent;
+        }
+        #order-addons-container::-webkit-scrollbar { width: 8px; }
+        #order-addons-container::-webkit-scrollbar-track { background: transparent; }
+        #order-addons-container::-webkit-scrollbar-thumb { background: #2f3550; border-radius: 8px; border: 2px solid #121521; }
+        #order-addons-container::-webkit-scrollbar-thumb:hover { background: #46507a; }
+
+        .os-row {
+            display: flex; align-items: center; gap: 12px; padding: 11px 13px; background: #0f121c; border: 1px solid #232738;
+            border-radius: 12px; cursor: pointer; user-select: none; transition: border-color .15s, background .15s;
+        }
+        .os-row:hover { border-color: #353c58; background: #131726; }
+        .os-row.is-checked { border-color: rgba(16,185,129,.65); background: rgba(16,185,129,.07); }
+        .os-row .order-addon-checkbox {
+            -webkit-appearance: none; appearance: none; flex: none; width: 20px; height: 20px; margin: 0; cursor: pointer;
+            border: 2px solid #3a4160; border-radius: 6px; background: #0a0c14; transition: background .15s, border-color .15s;
+        }
+        .os-row .order-addon-checkbox:hover { border-color: #5a6490; }
+        .os-row .order-addon-checkbox:checked {
+            background: var(--accent-green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-6.5' fill='none' stroke='%2304130d' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat;
+            border-color: var(--accent-green);
+        }
+        .os-row .order-addon-checkbox:focus-visible { outline: 2px solid rgba(16,185,129,.55); outline-offset: 2px; }
+        .os-name { flex: 1; min-width: 0; font-size: 0.88rem; color: #e8eaf2; line-height: 1.25; }
+        .os-qty { flex: none; display: inline-flex; align-items: center; background: #0a0c14; border: 1px solid #2d3142; border-radius: 8px; overflow: hidden; }
+        .os-qty-btn { width: 26px; height: 28px; border: none; background: transparent; color: #9aa3b8; font-size: 1rem; cursor: pointer; line-height: 1; padding: 0; }
+        .os-qty-btn:hover { background: #1b2033; color: #fff; }
+        .os-qty input.order-addon-qty-input {
+            width: 36px; height: 28px; border: none; border-left: 1px solid #232738; border-right: 1px solid #232738; border-radius: 0;
+            background: transparent; color: #fff; text-align: center; font-size: 0.85rem; padding: 0; margin: 0;
+            -moz-appearance: textfield; appearance: textfield; outline: none;
+        }
+        .os-qty input.order-addon-qty-input::-webkit-outer-spin-button,
+        .os-qty input.order-addon-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .os-qty input.order-addon-qty-input:focus { background: #131726; }
+        .os-price { flex: none; text-align: right; min-width: 52px; }
+        .os-empty { text-align: center; color: #8b93a8; padding: 14px; font-size: 0.82rem; }
+
+        #order-summary-modal .os-total { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #232738; padding-top: 16px; }
+        #order-summary-modal .os-total-label { font-size: 0.78rem; letter-spacing: .08em; text-transform: uppercase; color: #8b93a8; font-weight: 600; }
+        #order-summary-modal .os-total-value { font-size: 1.7rem; font-weight: 800; color: var(--accent-green); line-height: 1; }
+        #order-summary-modal .os-actions { display: flex; gap: 10px; }
+        #order-summary-modal .os-btn { flex: 1; padding: 11px 16px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: filter .15s, background .15s; }
+        #order-summary-modal .os-btn-ghost { background: #1a1e2e; color: #dfe3ef; border: 1px solid #2d3142; }
+        #order-summary-modal .os-btn-ghost:hover { background: #232841; }
+        #order-summary-modal .os-btn-primary { flex: 1.5; background: var(--accent-green); color: #04130d; border: none; }
+        #order-summary-modal .os-btn-primary:hover { filter: brightness(1.1); }
+    </style>
+
+    <div id="order-summary-modal" onmousedown="window.osMouseDownTarget = event.target;" onclick="if(event.target === this && window.osMouseDownTarget === this) closeOrderSummaryModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 6, 10, 0.85); z-index: 9999999; align-items: center; justify-content: center;">
+        <div class="os-card">
+            <div class="os-head">
+                <div style="min-width: 0;">
+                    <div class="os-title">Order Customization</div>
+                    <div class="os-sub" id="order-service-display"></div>
+                </div>
+                <button type="button" class="os-close" onclick="closeOrderSummaryModal()" aria-label="Close">✕</button>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #111420; padding: 12px; border-radius: 6px; border: 1px solid #232738;">
-                <span style="font-size: 0.9rem; font-weight: bold;">Base Price</span>
-                <span style="font-size: 0.9rem; color: var(--accent-green); font-weight: bold;" id="order-base-price-display">$0</span>
+            <div class="os-base">
+                <span class="os-base-label">Base Price</span>
+                <span class="os-base-value" id="order-base-price-display">$0</span>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: 10px; max-height: 200px; overflow-y: auto;" id="order-addons-container"></div>
+            <div class="os-section"><span>Add-ons</span><span id="order-selected-count">None selected</span></div>
+            <div id="order-addons-container"></div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2d3142; padding-top: 14px; margin-top: 6px;">
-                <span style="font-size: 1rem; font-weight: bold; color: #8b949e;">Total Summary:</span>
-                <strong style="font-size: 1.4rem; color: var(--accent-green);" id="order-total-price-display">$0</strong>
+            <div class="os-total">
+                <span class="os-total-label">Total</span>
+                <strong class="os-total-value" id="order-total-price-display">$0</strong>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
-                <button type="button" onclick="closeOrderSummaryModal()" style="background: #2a2d3d; color: white; border: 1px solid #3f445e; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">Cancel</button>
-                <button type="button" onclick="copyOrderDetailsToClipboard()" style="background: var(--accent-green); color: black; border: none; padding: 8px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem;">Copy Details</button>
+            <div class="os-actions">
+                <button type="button" class="os-btn os-btn-ghost" onclick="closeOrderSummaryModal()">Cancel</button>
+                <button type="button" class="os-btn os-btn-primary" onclick="copyOrderDetailsToClipboard()">📋 Copy Details</button>
             </div>
         </div>
     </div>
