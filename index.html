@@ -657,6 +657,11 @@
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
             min-height: 2.7em; word-break: break-word;
         }
+        .cat-meta { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+        .cat-eta {
+            flex: none; font-size: 0.72rem; font-weight: 600; color: #c4cadb; background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1); padding: 3px 9px; border-radius: 999px; white-space: nowrap; margin-bottom: 2px;
+        }
         .cat-price { display: flex; align-items: baseline; gap: 6px; }
         .cat-price span { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
         .cat-price strong { font-size: 1.25rem; color: #34d399; font-weight: 800; }
@@ -1500,6 +1505,8 @@
                     const dotsHtml = multi
                         ? '<div class="cat-dots" id="catalog-dots-' + item.id + '">' + sectionList.map((s, i) => '<span class="' + (i === 0 ? 'on' : '') + '"></span>').join('') + '</div>'
                         : '';
+                    const etaDays = parseInt(item.estDays, 10) || 0;
+                    const etaHtml = etaDays > 0 ? '<span class="cat-eta" title="Estimated time">⏱ ' + etaDays + (etaDays === 1 ? ' day' : ' days') + '</span>' : '';
                     const ribbonHtml = item.baseDiscount > 0 ? '<div class="cat-ribbon">-' + item.baseDiscount + '%</div>' : '';
 
                     catalogCardsHtml.push(`
@@ -1517,7 +1524,10 @@
 
                             <div class="cat-body">
                                 <div class="cat-title" title="${escDesc}">${escDesc}</div>
-                                <div class="cat-price"><span>Starting at</span><strong>$${item.price}</strong></div>
+                                <div class="cat-meta">
+                                    <div class="cat-price"><span>Starting at</span><strong>$${item.price}</strong></div>
+                                    ` + etaHtml + `
+                                </div>
                             </div>
 
                             <div class="cat-actions">
@@ -2375,7 +2385,8 @@
             currentActiveOrderCatalogItem = targetItem;
             document.getElementById('order-base-price-display').textContent = `$${targetItem.price}`;
             const serviceEl = document.getElementById('order-service-display');
-            if (serviceEl) serviceEl.textContent = targetItem.desc || 'Custom Art Commission';
+            const etaN = parseInt(targetItem.estDays, 10) || 0;
+            if (serviceEl) serviceEl.textContent = (targetItem.desc || 'Custom Art Commission') + (etaN > 0 ? '  ·  Est. ' + etaN + (etaN === 1 ? ' day' : ' days') : '');
 
             const container = document.getElementById('order-addons-container');
             container.innerHTML = "";
@@ -2512,6 +2523,8 @@
             textLines.push(`=== ORDER DETAILS ===`);
             textLines.push(`Service: ${currentActiveOrderCatalogItem.desc || 'Custom Art Commission'}`);
             textLines.push(`Base Price: $${basePrice}`);
+            const etaCopy = parseInt(currentActiveOrderCatalogItem.estDays, 10) || 0;
+            if (etaCopy > 0) textLines.push(`Estimated Time: ${etaCopy} ${etaCopy === 1 ? 'day' : 'days'}`);
 
             const checkboxes = document.querySelectorAll('.order-addon-checkbox');
             let hasAddons = false;
